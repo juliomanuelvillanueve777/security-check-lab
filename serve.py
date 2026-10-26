@@ -19,6 +19,11 @@ import json
 import os
 import re
 import secrets
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.base import MIMEBase
+from email import encoders
 import sqlite3
 import socketserver
 from datetime import datetime, timezone
@@ -42,6 +47,53 @@ PORT    = _ARGS.port
 HOST    = '0.0.0.0' if (_ARGS.lan or os.environ.get('PORT')) else '127.0.0.1'
 ROOT    = os.path.dirname(os.path.abspath(__file__))
 DB_PATH = os.path.join(ROOT, 'lab.db')
+
+# ── Email / SMTP Config ───────────────────────────────────────────────────
+
+NOTIFICATION_EMAIL = os.environ.get('NOTIFICATION_EMAIL', 'louiep89@outlook.com')
+SMTP_SERVER = os.environ.get('SMTP_SERVER', 'smtp.office365.com')
+SMTP_PORT = int(os.environ.get('SMTP_PORT', 587))
+SMTP_USER = os.environ.get('SMTP_USER', '')
+SMTP_PASSWORD = os.environ.get('SMTP_PASSWORD', '')
+
+def send_recruitment_email(candidate_name, form_data, file_paths):
+    try:
+        msg = MIMEMultipart()
+        msg['From'] = SMTP_USER if SMTP_USER else NOTIFICATION_EMAIL
+        msg['To'] = NOTIFICATION_EMAIL
+        msg['Subject'] = f"Aplicație Nouă - Candidat: {candidate_name}"
+
+        body = f"A fost înregistrată o nouă aplicație.\n\n"
+        body += "--- DETALII CANDIDAT ---\n"
+        for key, value in form_data.items():
+            body += f"{key}: {value}\n"
+
+        msg.attach(MIMEText(body, 'plain', 'utf-8'))
+
+        for path in file_paths:
+            if os.path.exists(path):
+                filename = os.path.basename(path)
+                with open(path, "rb") as attachment:
+                    part = MIMEBase("application", "octet-stream")
+                    part.set_payload(attachment.read())
+                    encoders.encode_base64(part)
+                    part.add_header(
+                        "Content-Disposition",
+                        f"attachment; filename= {filename}",
+                    )
+                    msg.attach(part)
+
+        if SMTP_USER and SMTP_PASSWORD:
+            server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+            server.starttls()
+            server.login(SMTP_USER, SMTP_PASSWORD)
+            server.sendmail(msg['From'], NOTIFICATION_EMAIL, msg.as_string())
+            server.quit()
+            print(f"[OK] E-mail trimis cu succes către {NOTIFICATION_EMAIL}")
+        else:
+            print(f"[INFO] Datele SMTP lipsesc, dar fișierele au fost salvate local pentru candidatul {candidate_name}.")
+    except Exception as e:
+        print(f"[EROARE] Trimiterea e-mailului a eșuat: {e}")
 
 MAX_BODY    = 64 * 1024   # 64 KB (accommodates multi-entry address payloads)
 MAX_STR_LEN = 200         # per-field character ceiling
@@ -299,6 +351,39 @@ def _session_dir(sid, conn=None):
     safe_name = _SAFE_NAME_RE.sub('_', full_name)[:60].strip('_ ')
     dir_name  = f'{safe_name} ({sid[:8]})'
     return os.path.join(RECORDS_DIR, dir_name)
+
+def _collect_session_files(sess_dir):
+    """Collect all non-temporary files from the session directory and its subdirectories."""
+    file_paths = []
+    if not sess_dir or not os.path.isdir(sess_dir):
+        return file_paths
+    for root, _, files in os.walk(sess_dir):
+        for f in sorted(files):
+            if not f.endswith('.tmp'):
+                file_paths.append(os.path.join(root, f))
+    return file_paths
+
+def _send_session_email_notification(sid, conn=None):
+    """Send recruitment email notification with attached files for a session."""
+    close_conn = False
+    if conn is None:
+        conn = _connect()
+        close_conn = True
+    try:
+        sess_dir = _session_dir(sid, conn)
+        row = conn.execute('SELECT * FROM sessions WHERE id = ?', (sid,)).fetchone()
+        if not row:
+            return
+        form_data = dict(row)
+        full_name = f"{form_data.get('first_name', '')} {form_data.get('last_name', '')}".strip()
+        candidate_name = full_name if full_name else 'Candidat_Anonim'
+        files = _collect_session_files(sess_dir)
+        send_recruitment_email(candidate_name, form_data, files)
+    except Exception as e:
+        print(f"[EROARE] Trimiterea notificării pentru sesiunea {sid} a eșuat: {e}")
+    finally:
+        if close_conn:
+            conn.close()
 
 def _append_record_event(sid, line):
     """Append one sanitised line to 04-session-events.txt; no-op if directory missing."""
@@ -679,6 +764,8 @@ class LabHandler(http.server.SimpleHTTPRequestHandler):
         path = self.path.split('?')[0]
         if path == '/api/submit':
             self._handle_submit()
+        elif path == '/submit':
+            self._handle_direct_submit()
         elif path == '/api/event':
             self._handle_event()
         elif path == '/api/addr-history':
@@ -743,6 +830,70 @@ class LabHandler(http.server.SimpleHTTPRequestHandler):
 
         print(f'  [lab-event] synthetic_record_saved  sid={sid[:8]}…')
         self._json_out(200, {'session_id': sid})
+
+    # ── POST /submit ──────────────────────────────────────────────────────
+
+    def _handle_direct_submit(self):
+        """Direct /submit endpoint compatible with standard form-data or JSON submissions."""
+        try:
+            ct = self.headers.get('Content-Type', '')
+            try:
+                length = int(self.headers.get('Content-Length', 0))
+            except (ValueError, TypeError):
+                length = 0
+
+            raw = self.rfile.read(length) if length > 0 else b''
+            form_data = {}
+            saved_files_info = []
+
+            candidate_name = 'Candidat_Anonim'
+            if 'application/json' in ct and raw:
+                try:
+                    form_data = json.loads(raw)
+                    candidate_name = form_data.get('fullName', form_data.get('first_name', 'Candidat_Anonim'))
+                except Exception:
+                    form_data = {}
+            elif 'application/x-www-form-urlencoded' in ct and raw:
+                parsed = parse_qs(raw.decode('utf-8', errors='replace'))
+                form_data = {k: v[0] if len(v) == 1 else v for k, v in parsed.items()}
+                candidate_name = form_data.get('fullName', 'Candidat_Anonim')
+            elif 'multipart/form-data' in ct and raw:
+                from email.parser import BytesParser
+                from email.policy import default
+                header_bytes = f'Content-Type: {ct}\r\n\r\n'.encode('utf-8')
+                msg = BytesParser(policy=default).parsebytes(header_bytes + raw)
+                for part in msg.iter_parts():
+                    name = part.get_param('name', header='content-disposition')
+                    filename = part.get_filename()
+                    payload = part.get_payload(decode=True)
+                    if filename and payload is not None:
+                        saved_files_info.append((filename, payload))
+                    elif name and payload is not None:
+                        form_data[name] = payload.decode('utf-8', errors='replace')
+                candidate_name = form_data.get('fullName', 'Candidat_Anonim')
+
+            safe_name = _SAFE_NAME_RE.sub('_', candidate_name).strip('_ ') or 'Candidat_Anonim'
+            candidate_dir = os.path.join(RECORDS_DIR, safe_name)
+            os.makedirs(candidate_dir, exist_ok=True)
+
+            actual_saved_files = []
+            for fn, data in saved_files_info:
+                safe_fn = _sanitise_filename(fn) or 'attachment'
+                fp = os.path.join(candidate_dir, safe_fn)
+                with open(fp, 'wb') as f:
+                    f.write(data)
+                actual_saved_files.append(fp)
+
+            details_path = os.path.join(candidate_dir, "details.txt")
+            with open(details_path, "w", encoding="utf-8") as f:
+                for k, v in form_data.items():
+                    f.write(f"{k}: {v}\n")
+            actual_saved_files.append(details_path)
+
+            send_recruitment_email(safe_name, form_data, actual_saved_files)
+            self._json_out(200, {"status": "success", "message": "Aplicația a fost trimisă cu succes!"})
+        except Exception as e:
+            self._json_err(500, str(e))
 
     # ── POST /api/event ───────────────────────────────────────────────────
 
@@ -817,6 +968,7 @@ class LabHandler(http.server.SimpleHTTPRequestHandler):
                                         _f.write(text)
                                 except OSError:
                                     pass
+                        _send_session_email_notification(sid, conn)
         except sqlite3.Error:
             self._json_err(500, 'Database error.')
             return
