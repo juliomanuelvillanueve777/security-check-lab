@@ -1,0 +1,304 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0f1117;
+  --surface: #1a1d27;
+  --surface2: #141720;
+  --border: #2e3248;
+  --accent: #4f8ef7;
+  --accent-hover: #3a77e8;
+  --text: #e2e8f0;
+  --muted: #8892a4;
+  --error: #f87171;
+  --warning-bg: #2d1f05;
+  --warning-border: #b45309;
+  --warning-text: #fbbf24;
+  --demo-bg: #0c1a2e;
+  --demo-border: #1e4080;
+  --demo-text: #60a5fa;
+  --hint: #6b7a96;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1.25rem 1rem 2.5rem;
+  overflow-x: hidden;
+}
+
+/* ── Disclaimer ───────────────────────────────────────────── */
+.disclaimer-banner {
+  width: 100%;
+  max-width: 680px;
+  background: var(--warning-bg);
+  border: 1px solid var(--warning-border);
+  color: var(--warning-text);
+  border-radius: 8px;
+  padding: 0.85rem 1.1rem;
+  font-size: 0.8rem;
+  text-align: center;
+  line-height: 1.65;
+  margin-bottom: 1.5rem;
+}
+
+/* ── Card ─────────────────────────────────────────────────── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 2rem 2rem 1.5rem;
+  width: 100%;
+  max-width: 680px;
+}
+
+h1 {
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.subtitle {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin-bottom: 2rem;
+}
+
+/* ── Sections ─────────────────────────────────────────────── */
+.form-section {
+  border-top: 1px solid var(--border);
+  padding-top: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.form-section:first-of-type {
+  border-top: none;
+  padding-top: 0;
+  margin-top: 0;
+}
+
+.section-heading {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.section-note {
+  font-size: 0.78rem;
+  color: var(--hint);
+  background: var(--demo-bg);
+  border: 1px solid var(--demo-border);
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  margin-bottom: 1rem;
+  line-height: 1.5;
+}
+
+.demo-tag {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: var(--demo-text);
+  background: var(--demo-bg);
+  border: 1px solid var(--demo-border);
+  border-radius: 4px;
+  padding: 0.15rem 0.4rem;
+}
+
+/* ── Field layout ─────────────────────────────────────────── */
+.field {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1.1rem;
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.9rem;
+}
+
+@media (max-width: 520px) {
+  .field-row { grid-template-columns: 1fr; }
+  .card { padding: 1.1rem .9rem 1.4rem; }
+
+  /* Prevent iOS auto-zoom on input focus */
+  input[type="text"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="date"],
+  select { font-size: 16px; }
+
+  /* Touch-friendly submit button */
+  .btn-next { min-height: 48px; font-size: 1rem; }
+
+  /* Upload zones: easier tap area */
+  .upload-zone { padding: 1rem .85rem; }
+  .upload-icon { font-size: 1.6rem; }
+  .upload-label { font-size: .82rem; }
+
+  /* Disclaimer wraps better */
+  .disclaimer-banner { font-size: .76rem; }
+}
+
+label {
+  font-size: 0.82rem;
+  font-weight: 500;
+  margin-bottom: 0.35rem;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.req { color: var(--error); }
+
+/* ── Inputs & Select ──────────────────────────────────────── */
+input[type="text"],
+input[type="email"],
+input[type="tel"],
+input[type="date"],
+select {
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 0.92rem;
+  padding: 0.6rem 0.75rem;
+  outline: none;
+  transition: border-color 0.15s;
+  width: 100%;
+  font-family: inherit;
+}
+
+input:focus,
+select:focus {
+  border-color: var(--accent);
+}
+
+input.invalid,
+select.invalid {
+  border-color: var(--error);
+}
+
+select option { background: var(--surface); }
+
+.field-hint {
+  font-size: 0.73rem;
+  color: var(--hint);
+  margin-top: 0.25rem;
+}
+
+.error {
+  color: var(--error);
+  font-size: 0.76rem;
+  min-height: 1.1em;
+  margin-top: 0.25rem;
+}
+
+/* ── Upload zones ─────────────────────────────────────────── */
+.upload-zone {
+  position: relative;
+  background: var(--surface2);
+  border: 2px dashed var(--border);
+  border-radius: 8px;
+  padding: 1.25rem 1rem;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.upload-zone:hover,
+.upload-zone.dragover {
+  border-color: var(--accent);
+  background: #151929;
+}
+
+.upload-zone.has-file {
+  border-color: #22c55e;
+  background: #0a1a10;
+}
+
+.upload-icon {
+  font-size: 2rem;
+  margin-bottom: 0.4rem;
+}
+
+.upload-label {
+  font-size: 0.85rem;
+  color: var(--text);
+  margin-bottom: 0.3rem;
+}
+
+.upload-sub {
+  font-size: 0.72rem;
+  color: var(--hint);
+  line-height: 1.5;
+}
+
+.upload-selected {
+  font-size: 0.78rem;
+  color: #22c55e;
+  margin-top: 0.5rem;
+  min-height: 1.2em;
+  font-weight: 500;
+}
+
+/* Invisible file input stretches over entire zone */
+.file-input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  width: 100%;
+  height: 100%;
+  cursor: pointer;
+}
+
+.upload-zone.invalid-zone {
+  border-color: var(--error);
+}
+
+/* ── Submit button ────────────────────────────────────────── */
+.server-error {
+  color: var(--error);
+  font-size: 0.82rem;
+  margin-top: 0.75rem;
+  min-height: 1.2em;
+  text-align: center;
+}
+
+.btn-next {
+  width: 100%;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.8rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 1.25rem;
+  transition: background 0.15s;
+}
+
+.btn-next:hover { background: var(--accent-hover); }
+.btn-next:active { transform: scale(0.98); }
+
+/* ── Footer ───────────────────────────────────────────────── */
+footer {
+  margin-top: 1.75rem;
+  color: var(--muted);
+  font-size: 0.72rem;
+  text-align: center;
+  max-width: 680px;
+  line-height: 1.6;
+}
