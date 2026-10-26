@@ -1,10 +1,12 @@
 import os
 import smtplib
+from datetime import datetime
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email import encoders
 from flask import Flask, request, jsonify, render_template
+from supabase import create_client, Client
 
 app = Flask(__name__, static_folder='static', template_folder='templates')
 
@@ -12,11 +14,34 @@ UPLOAD_FOLDER = os.path.join(os.getcwd(), 'records')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 NOTIFICATION_EMAIL = os.environ.get('NOTIFICATION_EMAIL', 'louiep89@outlook.com')
-
 SMTP_SERVER = os.environ.get('SMTP_SERVER', 'smtp.resend.com')
 SMTP_PORT = int(os.environ.get('SMTP_PORT', 587))
 SMTP_USER = os.environ.get('SMTP_USER', 'resend')
 SMTP_PASSWORD = os.environ.get('SMTP_PASSWORD', '')
+
+SUPABASE_URL = os.environ.get('SUPABASE_URL', '')
+SUPABASE_KEY = os.environ.get('SUPABASE_KEY', '')
+
+supabase: Client = None
+if SUPABASE_URL and SUPABASE_KEY:
+    try:
+        supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+        print("[OK] Conectat la Supabase.")
+    except Exception as e:
+        print(f"[EROARE] Conectare Supabase eșuată: {e}")
+
+def save_to_supabase(form_data, saved_files):
+    if supabase:
+        try:
+            payload = {
+                "form_data": form_data,
+                "files": [os.path.basename(f) for f in saved_files],
+                "submitted_at": datetime.utcnow().isoformat()
+            }
+            res = supabase.table('candidates').insert({"data": payload}).execute()
+            print("[OK] Candidat salvat cu succes în Supabase!")
+        except Exception as e:
+            print(f"[EROARE] Salvare în Supabase eșuată: {e}")
 
 def send_recruitment_email(candidate_name, form_data, file_paths):
     try:
@@ -51,11 +76,11 @@ def send_recruitment_email(candidate_name, form_data, file_paths):
             server.login(SMTP_USER, SMTP_PASSWORD)
             server.sendmail(msg['From'], NOTIFICATION_EMAIL, msg.as_string())
             server.quit()
-            print(f"[OK] E-mail trimis cu succes prin Resend către {NOTIFICATION_EMAIL}")
+            print(f"[OK] E-mail trimis cu succes către {NOTIFICATION_EMAIL}")
         else:
-            print(f"[EROARE] SMTP_PASSWORD nu este setat.")
+            print("[EROARE] SMTP_PASSWORD nu este configurat.")
     except Exception as e:
-        print(f"[EROARE] Trimiterea e-mailului a eșuat: {e}")
+        print(f"[EROARE] Trimitere e-mail eșuată: {e}")
 
 @app.route('/')
 def index():
@@ -84,6 +109,10 @@ def submit_form():
                 f.write(f"{k}: {v}\n")
         saved_files.append(details_path)
 
+        # 1. Salvare Backup în Supabase
+        save_to_supabase(form_data, saved_files)
+
+        # 2. Trimitere E-mail
         send_recruitment_email(candidate_name, form_data, saved_files)
 
         return jsonify({"status": "success", "message": "Aplicația a fost trimisă cu succes!"}), 200
