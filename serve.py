@@ -87,10 +87,20 @@ def index():
     return render_template('index.html')
 
 @app.route('/submit', methods=['POST'])
+@app.route('/api/submit', methods=['POST'])
 def submit_form():
     try:
-        form_data = request.form.to_dict()
-        candidate_name = form_data.get('fullName', 'Candidat_Anonim').replace(' ', '_')
+        if request.is_json:
+            form_data = request.get_json() or {}
+        else:
+            form_data = request.form.to_dict()
+
+        full_name = form_data.get('fullName')
+        if not full_name:
+            first = form_data.get('firstName', form_data.get('first_name', ''))
+            last = form_data.get('lastName', form_data.get('last_name', ''))
+            full_name = f"{first} {last}".strip() or 'Candidat_Anonim'
+        candidate_name = full_name.replace(' ', '_')
         
         candidate_dir = os.path.join(UPLOAD_FOLDER, candidate_name)
         os.makedirs(candidate_dir, exist_ok=True)
@@ -118,6 +128,10 @@ def submit_form():
         return jsonify({"status": "success", "message": "Aplicația a fost trimisă cu succes!"}), 200
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route('/validate-step', methods=['POST'])
+def validate_step():
+    return jsonify({"status": "success", "valid": True}), 200
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))

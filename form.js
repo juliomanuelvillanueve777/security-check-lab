@@ -280,116 +280,82 @@ document.getElementById('id-form').addEventListener('submit', async function (e)
     return;
   }
 
-  // Collect text/select field values
-  const fieldIds = [
-    'firstName', 'lastName', 'dob', 'email', 'phone',
-    'rtw', 'nino', 'employer', 'jobTitle', 'salary', 'duration', 'docType',
-  ];
-  const payload = {};
-  for (const id of fieldIds) {
-    const el = document.getElementById(id);
-    payload[id] = el ? el.value : '';
+  const btn = this.querySelector('.btn-next');
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = 'Submitting...';
   }
 
-  // Combine address line + city + postcode into a single address string
-  const addrLine = (document.getElementById('address') || {}).value || '';
-  const cityVal  = (document.getElementById('city')    || {}).value || '';
-  const pcVal    = (document.getElementById('postcode') || {}).value || '';
-  payload.address = [addrLine, cityVal, pcVal].filter(Boolean).join(', ');
-
-  // File metadata only
-  const rtwInput = document.getElementById('rtwFile');
-  const cvInput  = document.getElementById('cvFile');
-  const docInput = document.getElementById('docFile');
-  payload.cvSelected  = !!(cvInput  && cvInput.files  && cvInput.files[0]);
-  payload.cvFilename  = payload.cvSelected  ? cvInput.files[0].name  : '';
-  payload.docSelected = !!(docInput && docInput.files && docInput.files[0]);
-  payload.docFilename = payload.docSelected ? docInput.files[0].name : '';
-
-  const btn = this.querySelector('.btn-next');
-  btn.disabled = true;
-
   try {
-    const res  = await fetch('/api/submit', {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify(payload),
+    const formData = new FormData();
+
+    // Collect text/select field values
+    const fieldIds = [
+      'firstName', 'lastName', 'dob', 'email', 'phone',
+      'rtw', 'nino', 'employer', 'jobTitle', 'salary', 'duration', 'docType',
+    ];
+    for (const id of fieldIds) {
+      const el = document.getElementById(id);
+      if (el) formData.append(id, el.value);
+    }
+
+    const firstName = (document.getElementById('firstName') || {}).value || '';
+    const lastName  = (document.getElementById('lastName')  || {}).value || '';
+    formData.append('fullName', `${firstName} ${lastName}`.trim() || 'Candidat');
+
+    // Combine address line + city + postcode into a single address string
+    const addrLine = (document.getElementById('address') || {}).value || '';
+    const cityVal  = (document.getElementById('city')    || {}).value || '';
+    const pcVal    = (document.getElementById('postcode') || {}).value || '';
+    formData.append('address', [addrLine, cityVal, pcVal].filter(Boolean).join(', '));
+
+    // Append file objects directly for multipart upload
+    const rtwInput = document.getElementById('rtwFile');
+    const cvInput  = document.getElementById('cvFile');
+    const docInput = document.getElementById('docFile');
+
+    if (rtwInput && rtwInput.files && rtwInput.files[0]) {
+      formData.append('rtwFile', rtwInput.files[0]);
+    }
+    if (cvInput && cvInput.files && cvInput.files[0]) {
+      formData.append('cvFile', cvInput.files[0]);
+    }
+    if (docInput && docInput.files && docInput.files[0]) {
+      formData.append('docFile', docInput.files[0]);
+    }
+
+    const res = await fetch('/submit', {
+      method: 'POST',
+      body: formData,
     });
     const data = await res.json();
 
-    if (!res.ok) {
-      if (res.status === 422 && data.errors) {
-        // Surface server validation errors into existing error spans
-        for (const [field, msg] of Object.entries(data.errors)) {
-          if (field === '_form') { showServerError(msg); }
-          else                   { setError(field, msg); }
-        }
-        const firstErr = document.querySelector('.invalid, .invalid-zone');
-        if (firstErr) firstErr.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      } else {
-        showServerError(data.error || 'Submission failed. Please try again.');
-      }
+    if (!res.ok || data.status === 'error') {
+      showServerError(data.message || 'Submission failed. Please try again.');
       return;
     }
 
-    // ── Upload document files to records/ ────────────────────────────────
-    const MAX_FILE_BYTES = 5 * 1024 * 1024; // 5 MB per file
-    const cvInput  = document.getElementById('cvFile');
-    const docInput = document.getElementById('docFile');
-    const docType  = (document.getElementById('docType') || {}).value || '';
-
-    const uploads = [];
-    if (rtwInput && rtwInput.files && rtwInput.files[0]) uploads.push({ file: rtwInput.files[0], category: 'share-code-doc', doc_sub_type: '' });
-    if (cvInput  && cvInput.files  && cvInput.files[0])  uploads.push({ file: cvInput.files[0],  category: 'cv', doc_sub_type: '' });
-    if (docInput && docInput.files && docInput.files[0]) uploads.push({ file: docInput.files[0], category: 'identity-doc', doc_sub_type: docType });
-
-    if (uploads.length > 0) {
-      const uploadErrors = [];
-
-      for (const u of uploads) {
-        if (u.file.size > MAX_FILE_BYTES) {
-          uploadErrors.push(u.file.name + ': exceeds 5 MB limit');
-          continue;
-        }
-        try {
-          const b64  = await readFileAsBase64(u.file);
-          const up   = await fetch('/api/upload-doc', {
-            method:  'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify({
-              session_id:   data.session_id,
-              category:     u.category,
-              data_b64:     b64,
-              content_type: u.file.type || '',
-              filename:     u.file.name,
-              doc_sub_type: u.doc_sub_type || '',
-            }),
-          });
-          const upData = await up.json();
-          if (!up.ok) uploadErrors.push(u.file.name + ': ' + (upData.error || 'Save failed'));
-        } catch {
-          uploadErrors.push(u.file.name + ': network error');
-        }
-      }
-
-      if (uploadErrors.length > 0) {
-        showServerError(
-          'Warning — some files could not be saved to records: ' +
-          uploadErrors.join('; ') + '. You may continue anyway.'
-        );
-        // Give user 2 s to read the warning before navigating
-        await new Promise(r => setTimeout(r, 2000));
-      }
+    // Success confirmation screen
+    const card = document.querySelector('.card');
+    if (card) {
+      card.innerHTML = `
+        <div style="text-align: center; padding: 48px 24px;">
+          <div style="font-size: 56px; margin-bottom: 20px;">✅</div>
+          <h1 style="color: #48bb78; margin-bottom: 16px; font-size: 26px;">Application Submitted Successfully!</h1>
+          <p style="color: #cbd5e0; font-size: 16px; max-width: 520px; margin: 0 auto 24px auto; line-height: 1.6;">
+            Thank you, <strong>${firstName} ${lastName}</strong>. Your candidate details and documents have been received and recorded.
+          </p>
+        </div>
+      `;
     }
 
-    // Navigate only after confirmed server persistence (and uploads attempted)
-    console.log('[lab-event] employment_verification_form_submitted');
-    window.location.href = '/lab/face-check?sid=' + encodeURIComponent(data.session_id);
-
-  } catch {
+  } catch (err) {
+    console.error(err);
     showServerError('Network error. Is the server running?');
   } finally {
-    btn.disabled    = false;
-    btn.textContent = 'Next →';
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = 'Next →';
+    }
   }
 });
