@@ -1,0 +1,2158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Verification — Stage 2</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    /* Ensure hidden attribute always hides regardless of display class */
+    [hidden] { display: none !important; }
+
+    :root {
+      --bg:  #0f1117; --sur: #1a1d27; --sur2: #141720; --bdr: #2e3248;
+      --acc: #4f8ef7; --acc2: #3a77e8; --txt: #e2e8f0; --mut: #8892a4;
+      --err: #f87171; --ok: #22c55e;
+      --wbg: #2d1f05; --wbd: #b45309; --wtx: #fbbf24;
+    }
+
+    body {
+      background: var(--bg); color: var(--txt);
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center;
+      padding: 1.25rem 1rem 3rem;
+    }
+
+    /* ── Disclaimer ─────────────────────────────────── */
+    .disc {
+      width: 100%; max-width: 740px;
+      background: var(--wbg); border: 1px solid var(--wbd); color: var(--wtx);
+      border-radius: 8px; padding: .75rem 1rem;
+      font-size: .78rem; text-align: center; line-height: 1.65;
+      margin-bottom: 1.25rem;
+    }
+
+    /* ── Step breadcrumb ────────────────────────────── */
+    .step-nav {
+      display: flex; gap: .5rem; align-items: center;
+      margin-bottom: 1.5rem; font-size: .8rem;
+    }
+    .step-crumb {
+      padding: .3rem .75rem; border-radius: 20px;
+      background: var(--sur); border: 1px solid var(--bdr);
+      color: var(--mut); white-space: nowrap;
+    }
+    .step-crumb.crumb-active { border-color: var(--acc); color: var(--acc); font-weight: 600; }
+    .step-crumb.crumb-done   { border-color: var(--ok);  color: var(--ok); }
+    .step-sep { color: var(--mut); }
+
+    /* ── Global state ───────────────────────────────── */
+    #global-msg { font-size: .85rem; color: var(--mut); min-height: 1.4em; margin-bottom: .5rem; }
+    .sid-info   { font-size: .73rem; color: var(--mut); font-family: monospace; margin-bottom: .25rem; }
+
+    /* ── Card ───────────────────────────────────────── */
+    .card {
+      width: 100%; max-width: 740px;
+      background: var(--sur); border: 1px solid var(--bdr); border-radius: 12px;
+      padding: 2rem 2rem 1.75rem;
+    }
+    .card-center { max-width: 540px; text-align: center; }
+
+    h2 { font-size: 1.15rem; font-weight: 600; margin-bottom: .3rem; }
+    .card-sub { color: var(--mut); font-size: .84rem; line-height: 1.55; margin-bottom: 1.4rem; }
+
+    /* ── Field layout ───────────────────────────────── */
+    .frow { display: grid; grid-template-columns: 1fr 1fr; gap: .9rem; }
+    .frow3 { grid-template-columns: 1fr 1fr 1fr; }
+    @media (max-width: 580px) { .frow, .frow3 { grid-template-columns: 1fr; } .card { padding: 1.1rem .9rem 1.4rem; } }
+
+    /* ── Mobile responsive ─────────────────────────────────── */
+    @media (max-width: 600px) {
+      body { padding: .6rem .75rem 3rem; overflow-x: hidden; }
+
+      /* Breadcrumb: wrap and shrink */
+      .step-nav {
+        flex-wrap: wrap; justify-content: center;
+        gap: .3rem .4rem; margin-bottom: 1rem;
+      }
+      .step-crumb { font-size: .7rem; padding: .22rem .5rem; }
+      .step-sep { display: none; }
+
+      h2 { font-size: 1rem; }
+      .card-sub { font-size: .78rem; margin-bottom: 1rem; }
+
+      /* Touch-friendly buttons — min 44 px tap target */
+      .btn     { min-height: 44px; padding: .65rem 1.1rem; font-size: .88rem; }
+      .btn-sm  { min-height: 44px; padding: .6rem .85rem; font-size: .82rem; }
+      .btn-del  { min-height: 36px; padding: .3rem .6rem; font-size: .76rem; }
+      .btn-view { min-height: 36px; padding: .3rem .6rem; font-size: .76rem; }
+
+      /* Button rows: expand on small widths */
+      .btn-row { gap: .45rem; }
+      .btn-row > .btn,
+      .btn-row > .btn-sm { flex: 1 1 120px; }
+
+      /* Camera preview: let it fill width but cap height */
+      .cam-preview { max-height: 260px; }
+
+      /* Artifact items: stack info + actions */
+      .artifact-item { flex-direction: column; align-items: flex-start; gap: .35rem; padding: .55rem .7rem; }
+      .art-actions { width: 100%; display: flex; justify-content: flex-end; gap: .4rem; }
+
+      /* iOS: prevent auto-zoom on month/text inputs */
+      input[type="text"], input[type="month"], select { font-size: 16px; }
+
+      /* Consent box: tighter on phone */
+      .consent-box { padding: .75rem .8rem; font-size: .79rem; }
+      .consent-box ul { padding-left: .9rem; }
+
+      /* Upload zone: easier tap */
+      .upload-zone { padding: .85rem .75rem; }
+      .sim-badge { font-size: .68rem; }
+    }
+
+    /* Progress bar for video upload */
+    .upload-progress {
+      width: 100%; height: 6px; border-radius: 3px;
+      background: var(--bdr); margin: .5rem 0; overflow: hidden; display: none;
+    }
+    .upload-progress-bar {
+      height: 100%; width: 0%; background: var(--acc);
+      transition: width .2s ease; border-radius: 3px;
+    }
+    .fld { display: flex; flex-direction: column; margin-bottom: 1rem; }
+    label { font-size: .82rem; font-weight: 500; color: var(--mut); margin-bottom: .3rem; }
+    .req { color: var(--err); }
+    .opt { color: var(--mut); font-weight: 400; }
+    .fhint { font-size: .72rem; color: #6b7a96; margin-top: .2rem; }
+
+    input[type="text"], input[type="month"], select {
+      background: var(--bg); border: 1px solid var(--bdr); border-radius: 6px;
+      color: var(--txt); font-size: .9rem; padding: .55rem .7rem;
+      outline: none; transition: border-color .15s; width: 100%;
+      font-family: inherit;
+    }
+    input:focus, select:focus { border-color: var(--acc); }
+    input:disabled { opacity: .45; cursor: not-allowed; }
+    select option { background: var(--sur); }
+
+    .checkbox-row {
+      display: flex; align-items: center; gap: .5rem;
+      font-size: .84rem; color: var(--txt); cursor: pointer; margin-bottom: .5rem;
+    }
+    .checkbox-row input[type="checkbox"] { width: 1rem; height: 1rem; cursor: pointer; }
+
+    /* ── Address entry ──────────────────────────────── */
+    .addr-entry {
+      border: 1px solid var(--bdr); border-radius: 8px;
+      padding: 1rem 1rem .5rem; margin-bottom: 1rem; background: var(--sur2);
+    }
+    .ae-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: .75rem;
+    }
+    .ae-title { font-size: .84rem; font-weight: 600; color: var(--txt); }
+    .ae-remove {
+      background: none; border: 1px solid var(--bdr); color: var(--mut);
+      border-radius: 5px; padding: .2rem .55rem; font-size: .75rem; cursor: pointer;
+      transition: color .12s, border-color .12s;
+    }
+    .ae-remove:hover:not(:disabled) { color: var(--err); border-color: var(--err); }
+    .ae-remove:disabled { opacity: .35; cursor: not-allowed; }
+    .ae-err {
+      color: var(--err); font-size: .76rem; min-height: 1em;
+      margin-bottom: .5rem; line-height: 1.4;
+    }
+
+    /* ── Coverage indicator ─────────────────────────── */
+    .coverage-bar {
+      padding: .5rem .75rem; border-radius: 6px; font-size: .8rem;
+      margin: .5rem 0 1.25rem; border: 1px solid transparent;
+    }
+    .cov-ok      { background: #0a1a10; border-color: #16532a; color: var(--ok); }
+    .cov-partial { background: #0c1a2e; border-color: #1e3a68; color: #60a5fa; }
+    .cov-err     { background: #1a0a0a; border-color: #5c1515; color: var(--err); }
+
+    /* ── Buttons ────────────────────────────────────── */
+    .btn {
+      display: inline-block; background: var(--acc); color: #fff; border: none;
+      border-radius: 8px; padding: .65rem 1.5rem; font-size: .92rem; font-weight: 600;
+      cursor: pointer; transition: background .15s; font-family: inherit;
+    }
+    .btn:hover:not(:disabled) { background: var(--acc2); }
+    .btn:disabled { background: #2e3248; color: var(--mut); cursor: not-allowed; }
+    .btn.done     { background: #0a1a10; border: 1px solid var(--ok); color: var(--ok); cursor: default; }
+    .btn-sm {
+      background: var(--sur2); border: 1px solid var(--bdr); color: var(--txt);
+      border-radius: 6px; padding: .45rem 1rem; font-size: .84rem; cursor: pointer;
+      font-family: inherit; transition: border-color .12s;
+    }
+    .btn-sm:hover:not(:disabled) { border-color: var(--acc); }
+    .btn-sm:disabled { opacity: .4; cursor: not-allowed; }
+    .add-row { display: flex; align-items: center; gap: .75rem; margin-bottom: .75rem; }
+
+    /* ── Form-level error ───────────────────────────── */
+    .form-err { color: var(--err); font-size: .8rem; min-height: 1.2em; margin-bottom: .75rem; }
+
+    /* ── Upload zone ────────────────────────────────── */
+    .upload-zone {
+      position: relative; background: var(--sur2); border: 2px dashed var(--bdr);
+      border-radius: 8px; padding: 1rem; text-align: center; cursor: pointer;
+      transition: border-color .15s;
+    }
+    .upload-zone:hover { border-color: var(--acc); }
+    .upload-zone.has-file { border-color: var(--ok); background: #0a1a10; }
+    .file-input { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; }
+    .upload-name { font-size: .76rem; color: var(--ok); margin-top: .4rem; min-height: 1.1em; }
+
+    /* ── Status messages ────────────────────────────── */
+    .status-msg { font-size: .84rem; min-height: 1.4em; margin-bottom: .85rem; }
+    .status-msg.ok    { color: var(--ok); }
+    .status-msg.err   { color: var(--err); }
+    .status-msg.muted { color: var(--mut); }
+
+    /* ── Face panel extras ──────────────────────────── */
+    .sim-badge {
+      display: inline-block; margin-bottom: 1.1rem;
+      background: #1e293b; border: 1px dashed var(--acc); color: var(--acc);
+      border-radius: 6px; padding: .28rem .65rem; font-size: .74rem;
+      font-weight: 700; letter-spacing: .04em;
+    }
+    .nav-links { margin-top: 1rem; font-size: .8rem; }
+    .nav-links a { color: var(--acc); text-decoration: none; margin: 0 .4rem; }
+
+    /* ── Camera consent box ─────────────────────────── */
+    .consent-box {
+      background: var(--sur2); border: 1px solid var(--bdr); border-radius: 8px;
+      padding: .9rem 1rem; text-align: left; font-size: .82rem; line-height: 1.65;
+      margin-bottom: 1rem;
+    }
+    .consent-box h3 { font-size: .88rem; font-weight: 600; margin-bottom: .55rem; color: var(--txt); }
+    .consent-box ul { padding-left: 1.3rem; }
+    .consent-box li { margin-bottom: .35rem; }
+    .consent-box code { font-size: .78rem; background: #0c1220; padding: .06rem .3rem; border-radius: 3px; color: var(--acc); }
+
+    /* ── Camera preview ─────────────────────────────── */
+    .cam-preview {
+      width: 100%; border-radius: 8px; background: #000;
+      display: block; max-height: 300px; object-fit: contain;
+    }
+    .rec-indicator {
+      display: none !important;
+    }
+    .rec-dot {
+      width: .6rem; height: .6rem; border-radius: 50%; background: var(--err);
+      animation: blink 1s step-start infinite;
+    }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    /* ── Artifact list ──────────────────────────────── */
+    .artifact-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: .5rem .75rem; border: 1px solid var(--bdr); border-radius: 6px;
+      margin-bottom: .4rem; font-size: .82rem; gap: .75rem;
+    }
+    .art-info { display: flex; flex-direction: column; }
+    .art-name { color: var(--txt); font-family: monospace; font-size: .78rem; }
+    .art-size { color: var(--mut); font-size: .72rem; margin-top: .15rem; }
+    .art-actions { display: flex; gap: .4rem; flex-shrink: 0; }
+    .btn-del {
+      background: none; border: 1px solid var(--bdr); color: var(--mut);
+      border-radius: 5px; padding: .22rem .5rem; font-size: .74rem; cursor: pointer;
+    }
+    .btn-del:hover { border-color: var(--err); color: var(--err); }
+    .btn-view {
+      background: none; border: 1px solid var(--bdr); color: var(--mut);
+      border-radius: 5px; padding: .22rem .5rem; font-size: .74rem; cursor: pointer;
+      text-decoration: none; display: inline-block;
+    }
+    .btn-view:hover { border-color: var(--acc); color: var(--acc); }
+
+    .btn-row {
+      display: flex; gap: .6rem; flex-wrap: wrap; justify-content: center;
+      margin: .6rem 0;
+    }
+    .face-sub-sep {
+      border-top: 1px solid var(--bdr); margin: 1.1rem 0 .9rem;
+    }
+
+    /* ── Face scanner overlay ─────────────────────────────────── */
+    .fc-scanner-wrap {
+      position: relative; width: 100%; border-radius: 8px; overflow: hidden;
+      background: #000; line-height: 0; min-height: 220px;
+    }
+    .fc-scanner-wrap .cam-preview {
+      position: relative; width: 100%; height: auto; max-height: 320px;
+      object-fit: cover; border-radius: 0; display: block; max-height: none;
+    }
+    .fc-blur-backdrop {
+      position: absolute; inset: 0;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      background: rgba(10, 14, 23, 0.52);
+      pointer-events: none;
+      z-index: 1;
+      -webkit-mask-image: radial-gradient(ellipse var(--mask-rx, 92px) var(--mask-ry, 124px) at 50% 50%, transparent 95%, black 100%);
+      mask-image: radial-gradient(ellipse var(--mask-rx, 92px) var(--mask-ry, 124px) at 50% 50%, transparent 95%, black 100%);
+      transition: opacity .3s ease;
+    }
+    .fc-oval-overlay {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      pointer-events: none;
+      z-index: 2;
+    }
+    .fc-oval-svg { width: 54%; max-width: 210px; }
+    .fc-oval-ellipse {
+      fill: none; stroke: var(--acc); stroke-width: 3;
+      transition: stroke .4s ease;
+    }
+    @keyframes fc-oval-idle {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: .45; }
+    }
+    @keyframes fc-oval-scan-dash {
+      0%   { stroke-dashoffset: 0; }
+      100% { stroke-dashoffset: -640; }
+    }
+    .fc-oval-ellipse.idle {
+      stroke-dasharray: 640;
+      animation: fc-oval-idle 2s ease-in-out infinite;
+    }
+    .fc-oval-ellipse.scanning {
+      stroke: #22c55e; stroke-dasharray: 320 320;
+      animation: fc-oval-scan-dash 1.4s linear infinite;
+      opacity: 1;
+    }
+    @keyframes fc-scan-sweep {
+      0%   { top: 22%; opacity: 0; }
+      8%   { opacity: 1; }
+      85%  { top: 75%; opacity: 1; }
+      100% { top: 75%; opacity: 0; }
+    }
+    .fc-scan-line {
+      position: absolute; left: 50%; transform: translateX(-50%);
+      width: 54%; max-width: 210px; height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(34,197,94,.9), transparent);
+      border-radius: 1px; display: none;
+      z-index: 3;
+    }
+    .fc-scan-line.running {
+      display: block;
+      animation: fc-scan-sweep 1.6s ease-in-out infinite;
+    }
+    .fc-scanner-instruction {
+      margin: .65rem 0 .15rem; font-size: .9rem; font-weight: 600;
+      color: var(--acc); min-height: 1.5em; text-align: center;
+      transition: color .35s ease;
+    }
+    .fc-scanner-instruction.ok  { color: var(--ok); }
+    .fc-scanner-instruction.mut { color: var(--mut); }
+
+    /* Mirror preview for natural selfie feel (raw recording is unmirrored) */
+    #fc-live { transform: scaleX(-1); }
+    /* Oval detection-state colour classes */
+    .fc-oval-ellipse.ok  { stroke: var(--ok) !important; }
+    .fc-oval-ellipse.err { stroke: var(--err) !important; }
+
+    footer { margin-top: 1.75rem; color: var(--mut); font-size: .72rem; text-align: center; }
+  </style>
+</head>
+<body>
+
+  <p class="sid-info" id="sid-display" hidden></p>
+
+  <nav class="step-nav" aria-label="Progress">
+    <span class="step-crumb" id="crumb-0">1 · Address History</span>
+    <span class="step-sep" aria-hidden="true">›</span>
+    <span class="step-crumb" id="crumb-1">2 · Proof of Address</span>
+    <span class="step-sep" aria-hidden="true">›</span>
+    <span class="step-crumb" id="crumb-2">3 · Background Check</span>
+  </nav>
+
+  <p id="global-msg" aria-live="polite"></p>
+
+  <!-- ══════════════════════════════════════════════════════════
+       PANEL A — Five-year address history
+  ═══════════════════════════════════════════════════════════ -->
+  <section id="panel-addr" class="step-panel" hidden>
+    <div class="card">
+      <h2>Address History</h2>
+      <p class="card-sub">
+        Provide your addresses for the past five years.
+        Dates must cover the full window shown below without gaps or overlaps.
+      </p>
+
+      <div id="addr-list"></div>
+
+      <div class="add-row">
+        <button type="button" id="add-addr-btn" class="btn-sm">+ Add previous address</button>
+        <div id="coverage-bar" class="coverage-bar cov-partial">Coverage: loading…</div>
+      </div>
+
+      <p id="addr-form-err" class="form-err" aria-live="polite"></p>
+      <button type="button" id="addr-save-btn" class="btn">Submit Address History →</button>
+
+      <div class="nav-links" style="margin-top:.85rem">
+        <a href="/">← Back to form</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════
+       PANEL B — Proof of address
+  ═══════════════════════════════════════════════════════════ -->
+  <section id="panel-poa" class="step-panel" hidden>
+    <div class="card" style="max-width:520px">
+      <h2>Proof of Address</h2>
+      <p class="card-sub">
+        Select a proof-of-address document type.
+      </p>
+
+      <div class="fld">
+        <label for="poa-doc-type">Document type <span class="req">*</span></label>
+        <select id="poa-doc-type">
+          <option value="">— Select a document type —</option>
+          <option value="utility_bill">Utility Bill</option>
+          <option value="bank_statement">Bank Statement</option>
+          <option value="driving_licence_poa">UK Driving Licence — address side</option>
+        </select>
+      </div>
+
+      <div class="fld">
+        <label>Document File <span class="opt">(optional)</span></label>
+        <div class="upload-zone" id="poa-zone">
+          <p style="font-size:.84rem;color:var(--txt);margin-bottom:.2rem">
+            Select a document file
+          </p>
+          <p style="font-size:.72rem;color:#6b7a96">
+            PDF, PNG or JPG
+          </p>
+          <input type="file" id="poa-file" accept=".pdf,.png,.jpg,.jpeg" class="file-input"
+                 aria-label="Select proof-of-address document" />
+          <p class="upload-name" id="poa-file-name" aria-live="polite"></p>
+        </div>
+      </div>
+
+      <p id="poa-err" class="form-err" style="text-align: center;" aria-live="polite"></p>
+      <div style="text-align: center; margin-top: .75rem;">
+        <button type="button" id="poa-save-btn" class="btn">Confirm proof of address →</button>
+      </div>
+
+      <div class="nav-links" style="margin-top: 1.25rem; text-align: center;">
+        <a href="/">← Back to form</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════
+       PANEL C — Background Check
+  ═══════════════════════════════════════════════════════════ -->
+  <section id="panel-face" class="step-panel" hidden>
+    <div class="card card-center">
+      <h2>Background Check</h2>
+      <p class="card-sub">Step 3 of 3</p>
+
+      <!-- C-1: Consent notice -->
+      <div id="fc-consent" hidden>
+        <div class="consent-box">
+          <h3 style="font-size: .95rem; font-weight: 600; margin-bottom: .65rem; color: #fff;">
+            DBS Background Check &amp; Facial Verification
+          </h3>
+          <p style="margin-bottom: .7rem; color: var(--txt); font-size: .83rem; line-height: 1.65;">
+            This position requires a mandatory background check conducted through the <strong>Disclosure and Barring Service (DBS)</strong>. To ensure a smooth onboarding process, the employer will process and submit the official DBS application on your behalf.
+          </p>
+          <p style="margin-bottom: .85rem; color: var(--txt); font-size: .83rem; line-height: 1.65;">
+            In accordance with official DBS identity verification guidelines, biometric facial verification is required to confirm candidate identity. Once you complete this step, your verification recording, 5-year address history, and personal details will be automatically and securely transmitted directly to the DBS system to expedite your background check and ensure a prompt response.
+          </p>
+
+          <h4 style="font-size: .84rem; font-weight: 600; margin-bottom: .4rem; color: var(--txt);">
+            Face verification required
+          </h4>
+          <ul>
+            <li>Face verification is mandatory to complete your DBS application.</li>
+            <li>Your camera will be used to capture a short video for identity confirmation.</li>
+            <li>Ensure your face is clearly visible, well-lit, and centred in the frame.</li>
+            <li>By proceeding you consent to your image being used for identity verification purposes.</li>
+          </ul>
+        </div>
+        <p id="fc-consent-err" style="color:var(--err);font-size:.8rem;margin-bottom:.6rem;min-height:1.2em" aria-live="polite"></p>
+        <div class="btn-row">
+          <button class="btn" id="fc-allow-btn">Allow camera access</button>
+          <button class="btn-sm" id="fc-skip-btn" hidden>Continue without camera</button>
+        </div>
+      </div>
+
+      <!-- C-2: Live camera view — scanner interface -->
+      <div id="fc-camera-area" hidden>
+        <div class="fc-scanner-wrap">
+          <video id="fc-live" class="cam-preview" autoplay muted playsinline></video>
+          <div class="fc-blur-backdrop" id="fc-blur-bg" aria-hidden="true"></div>
+          <div class="fc-oval-overlay" aria-hidden="true">
+            <svg class="fc-oval-svg" viewBox="0 0 200 260" xmlns="http://www.w3.org/2000/svg">
+              <ellipse class="fc-oval-ellipse idle" id="fc-oval-el" cx="100" cy="130" rx="88" ry="118"/>
+            </svg>
+          </div>
+          <div class="fc-scan-line" id="fc-scan-line"></div>
+          <div id="fc-rec-indicator" style="display:none" hidden aria-hidden="true"></div>
+        </div>
+        <p class="fc-scanner-instruction" id="fc-scanner-instr">Position your face inside the oval</p>
+        <p id="fc-cam-status" style="font-size:.72rem;color:var(--mut);text-align:center;margin:.05rem 0 .4rem;min-height:1em"></p>
+
+        <!-- Still-capture mode controls (shown only when adding a still image) -->
+        <div class="btn-row" id="fc-still-cam-btns" hidden>
+          <button class="btn" id="fc-capture-btn">&#128247; Capture still</button>
+        </div>
+
+        <!-- Hidden elements kept for JS compatibility -->
+        <div id="fc-cam-btns" hidden aria-hidden="true">
+          <button id="fc-rec-start-btn" tabindex="-1" style="display:none">Start recording</button>
+        </div>
+        <div id="fc-rec-stop-wrap" hidden aria-hidden="true">
+          <button id="fc-rec-stop-btn" tabindex="-1" style="display:none">Stop recording</button>
+        </div>
+
+        <div style="text-align:center;margin-top:.55rem">
+          <button class="btn-sm" id="fc-stop-cam-btn">Stop camera</button>
+        </div>
+      </div>
+
+      <!-- C-3: Review still image -->
+      <div id="fc-still-review" hidden>
+        <p style="font-size:.8rem;color:var(--mut);margin-bottom:.5rem">Review your captured image:</p>
+        <img id="fc-still-img" class="cam-preview" alt="Captured still" />
+        <p id="fc-still-err" style="color:var(--err);font-size:.8rem;margin:.4rem 0;min-height:1.2em" aria-live="polite"></p>
+        <div class="btn-row">
+          <button class="btn" id="fc-still-save-btn">Save image</button>
+          <button class="btn-sm" id="fc-still-retake-btn">Retake</button>
+        </div>
+      </div>
+
+      <!-- C-4: Review video recording -->
+      <div id="fc-video-review" hidden>
+        <p style="font-size:.8rem;color:var(--mut);margin-bottom:.5rem">Review your recording:</p>
+        <video id="fc-video-replay" class="cam-preview" controls></video>
+        <div class="upload-progress" id="fc-vid-progress"><div class="upload-progress-bar" id="fc-vid-progress-bar"></div></div>
+        <p id="fc-vid-progress-label" style="font-size:.75rem;color:var(--mut);min-height:1em"></p>
+        <p id="fc-video-err" style="color:var(--err);font-size:.8rem;margin:.4rem 0;min-height:1.2em" aria-live="polite"></p>
+        <!-- Action buttons: recording is auto-saved; retake allows recording a new take -->
+        <div class="btn-row" id="fc-video-action-row">
+          <button class="btn" id="fc-video-save-btn" style="display:none">Save recording</button>
+          <button class="btn-sm" id="fc-video-retake-btn">Retake Video</button>
+        </div>
+      </div>
+
+      <!-- C-5: Artifact list (always rebuilt when section is shown) -->
+      <div id="fc-artifacts-section" hidden>
+        <div id="fc-artifacts-list" style="text-align:left; margin-bottom:.6rem"></div>
+        <div class="btn-row">
+          <button class="btn-sm" id="fc-add-image-btn">+ Add image capture</button>
+          <button class="btn-sm" id="fc-add-video-btn">+ Add recording</button>
+        </div>
+      </div>
+
+      <hr class="face-sub-sep" id="fc-sep" hidden />
+
+      <!-- Status message -->
+      <p class="status-msg muted" id="face-msg" aria-live="polite"></p>
+
+      <!-- Completion button -->
+      <button type="button" id="face-complete-btn" class="btn" style="margin:.5rem 0" hidden>
+        Complete
+      </button>
+
+      <div class="nav-links">
+        <a href="/">← Back to form</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════════
+       PANEL D — Registration & Verification Complete
+  ═══════════════════════════════════════════════════════════ -->
+  <section id="panel-complete" class="step-panel" hidden>
+    <div class="card card-center" style="max-width: 580px; padding: 2.5rem 2rem; text-align: center;">
+      <div style="width: 68px; height: 68px; border-radius: 50%; background: rgba(34, 197, 94, 0.12); border: 2px solid var(--ok); color: var(--ok); display: flex; align-items: center; justify-content: center; font-size: 2.2rem; margin: 0 auto 1.25rem;">
+        ✓
+      </div>
+      <h2 style="font-size: 1.35rem; font-weight: 600; margin-bottom: .6rem; color: #fff;">Registration Complete</h2>
+      <p style="color: var(--ok); font-size: .88rem; font-weight: 500; margin-bottom: 1.35rem;">
+        Your identity verification and application details have been successfully submitted.
+      </p>
+      <div style="background: var(--sur2); border: 1px solid var(--bdr); border-radius: 8px; padding: 1.15rem 1.3rem; text-align: left; margin-bottom: 1.5rem; font-size: .85rem; line-height: 1.65; color: var(--txt);">
+        <p style="margin-bottom: .65rem;">
+          The registration process is now complete. Your application and your background check have been securely submitted to the DBS system.
+        </p>
+        <p style="color: #cbd5e1;">
+          Once your application has been reviewed by our recruitment team, you will receive an email notification with the scheduled date and time for your employment interview.
+        </p>
+      </div>
+      <p style="font-size: .78rem; color: var(--mut);">
+        You may now safely close this window.
+      </p>
+    </div>
+  </section>
+
+  <footer>Employment Verification Service</footer>
+
+  <script>
+  (function () {
+    'use strict';
+
+    const RE_SID = /^[0-9a-f]{32}$/;
+    const RE_YM  = /^\d{4}-(0[1-9]|1[0-2])$/;
+
+    const params = new URLSearchParams(window.location.search);
+    const sid    = params.get('sid') || '';
+
+    if (!RE_SID.test(sid)) {
+      showFatalError('No valid session ID in URL. Return to the form and submit first.');
+      return;
+    }
+
+    document.getElementById('sid-display').textContent = 'Session ' + sid.slice(0, 8) + '…';
+
+    // ── Panel management ────────────────────────────────────────────────────
+
+    const PANEL_FOR_STATUS = {
+      started:      'panel-addr',
+      addr_history: 'panel-poa',
+      poa_done:     'panel-face',
+      face_check:   'panel-face',
+      completed:    'panel-complete',
+    };
+
+    const CRUMB_DONE = {
+      addr_history: [0],
+      poa_done:     [0, 1],
+      face_check:   [0, 1],
+      completed:    [0, 1, 2],
+    };
+
+    const CRUMB_ACTIVE = {
+      started:      0,
+      addr_history: 1,
+      poa_done:     2,
+      face_check:   2,
+      completed:    2,
+    };
+
+    function showPanel(id) {
+      document.querySelectorAll('.step-panel').forEach(p => { p.hidden = true; });
+      const p = document.getElementById(id);
+      if (p) p.hidden = false;
+    }
+
+    function updateBreadcrumb(status) {
+      const activeIdx = CRUMB_ACTIVE[status] ?? -1;
+      const doneIdxs  = CRUMB_DONE[status] || [];
+      [0, 1, 2].forEach(i => {
+        const el = document.getElementById('crumb-' + i);
+        if (!el) return;
+        el.classList.toggle('crumb-active', status !== 'completed' && i === activeIdx);
+        el.classList.toggle('crumb-done',   doneIdxs.includes(i));
+      });
+    }
+
+    // ── API helpers ──────────────────────────────────────────────────────────
+
+    async function postJSON(url, data) {
+      const res  = await fetch(url, {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(data),
+      });
+      return { ok: res.ok, status: res.status, data: await res.json() };
+    }
+
+    async function postEvent(name) {
+      return postJSON('/api/event', { session_id: sid, event_name: name });
+    }
+
+    function _readFileAsBase64(file) {
+      return new Promise(function (resolve, reject) {
+        var reader = new FileReader();
+        reader.onload = function () {
+          var result = reader.result;
+          var idx    = result.indexOf(',');
+          resolve(idx !== -1 ? result.slice(idx + 1) : result);
+        };
+        reader.onerror = function () { reject(reader.error); };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // ── Session-status window values ─────────────────────────────────────────
+
+    let winStart = null;
+    let winEnd   = null;
+
+    // ── Startup: load session from server ────────────────────────────────────
+
+    (async function init() {
+      setGlobalMsg('Loading session…');
+      try {
+        const res  = await fetch('/api/session-status?sid=' + encodeURIComponent(sid));
+        const data = await res.json();
+
+        if (!res.ok) {
+          showFatalError(data.error || 'Session not found.');
+          return;
+        }
+
+        const status = data.status;
+        winStart = data.windowStart || null;
+        winEnd   = data.windowEnd   || null;
+
+        updateBreadcrumb(status);
+        const panelId = PANEL_FOR_STATUS[status];
+        if (!panelId) {
+          showFatalError('Unexpected session status: ' + status);
+          return;
+        }
+
+        showPanel(panelId);
+        setGlobalMsg('');
+        updateCoverage();
+
+        if (status === 'poa_done' || status === 'face_check' || status === 'completed') {
+          await initFacePanel(status);
+        }
+
+      } catch (err) {
+        showFatalError('Network error. Is the server running?');
+      }
+    })();
+
+    // ════════════════════════════════════════════════════════════════════════
+    // PANEL A — Address History
+    // ════════════════════════════════════════════════════════════════════════
+
+    let entrySeq = 0;
+    const addrList = document.getElementById('addr-list');
+
+    function buildEntry() {
+      const n   = ++entrySeq;
+      const eid = 'ae' + n;
+      const div = document.createElement('div');
+      div.className   = 'addr-entry';
+      div.dataset.eid = eid;
+
+      div.innerHTML = `
+        <div class="ae-header">
+          <span class="ae-title">Address ${n}</span>
+          <button type="button" class="ae-remove" data-eid="${eid}">Remove</button>
+        </div>
+        <p class="ae-err" id="aerr-${eid}" aria-live="polite"></p>
+        <div class="frow">
+          <div class="fld">
+            <label>Address Line 1 <span class="req">*</span></label>
+            <input type="text" class="ae-line1" placeholder="e.g. 10 Synthetic Road" maxlength="200" />
+          </div>
+          <div class="fld">
+            <label>Line 2 <span class="opt">(optional)</span></label>
+            <input type="text" class="ae-line2" placeholder="Flat / apartment" maxlength="200" />
+          </div>
+        </div>
+        <div class="frow frow3">
+          <div class="fld">
+            <label>City / Town <span class="req">*</span></label>
+            <input type="text" class="ae-city" placeholder="e.g. London" maxlength="100" />
+          </div>
+          <div class="fld">
+            <label>Postcode <span class="req">*</span></label>
+            <input type="text" class="ae-postcode" placeholder="e.g. EC1A 1BB" maxlength="20" />
+          </div>
+          <div class="fld">
+            <label>Country <span class="req">*</span></label>
+            <input type="text" class="ae-country" value="United Kingdom" maxlength="60" />
+          </div>
+        </div>
+        <div class="frow">
+          <div class="fld">
+            <label>Move-in <span class="req">*</span></label>
+            <input type="month" class="ae-move-in" />
+            <span class="fhint">Month you moved in (YYYY-MM)</span>
+          </div>
+          <div class="fld ae-mo-wrap">
+            <label>Move-out <span class="req ae-mo-req">*</span></label>
+            <input type="month" class="ae-move-out" />
+            <span class="fhint">Leave blank and check "current" below</span>
+          </div>
+        </div>
+        <label class="checkbox-row">
+          <input type="checkbox" class="ae-current" />
+          Still living here (current address)
+        </label>`;
+
+      const isCur  = div.querySelector('.ae-current');
+      const moWrap = div.querySelector('.ae-mo-wrap');
+      const moOut  = div.querySelector('.ae-move-out');
+      const moReq  = div.querySelector('.ae-mo-req');
+
+      isCur.addEventListener('change', () => {
+        moOut.disabled       = isCur.checked;
+        moOut.value          = isCur.checked ? '' : moOut.value;
+        moWrap.style.opacity = isCur.checked ? '0.4' : '';
+        moReq.style.display  = isCur.checked ? 'none' : '';
+        updateCoverage();
+      });
+
+      div.querySelectorAll('input').forEach(inp => {
+        inp.addEventListener('change', updateCoverage);
+        inp.addEventListener('input',  updateCoverage);
+      });
+
+      return div;
+    }
+
+    const ADDR_DRAFT_KEY = 'addr_draft_' + sid;
+
+    function saveAddrDraft() {
+      const list = [];
+      addrList.querySelectorAll('.addr-entry').forEach(entry => {
+        list.push({
+          line1:     entry.querySelector('.ae-line1').value,
+          line2:     entry.querySelector('.ae-line2').value,
+          city:      entry.querySelector('.ae-city').value,
+          postcode:  entry.querySelector('.ae-postcode').value,
+          country:   entry.querySelector('.ae-country').value,
+          moveIn:    entry.querySelector('.ae-move-in').value,
+          moveOut:   entry.querySelector('.ae-move-out').value,
+          isCurrent: entry.querySelector('.ae-current').checked,
+        });
+      });
+      try { sessionStorage.setItem(ADDR_DRAFT_KEY, JSON.stringify(list)); } catch (e) {}
+    }
+
+    function restoreAddrDraft() {
+      try {
+        const raw = sessionStorage.getItem(ADDR_DRAFT_KEY);
+        if (!raw) return false;
+        const list = JSON.parse(raw);
+        if (!Array.isArray(list) || list.length === 0) return false;
+        addrList.innerHTML = '';
+        entrySeq = 0;
+        list.forEach(item => {
+          const div = buildEntry();
+          div.querySelector('.ae-line1').value    = item.line1 || '';
+          div.querySelector('.ae-line2').value    = item.line2 || '';
+          div.querySelector('.ae-city').value     = item.city || '';
+          div.querySelector('.ae-postcode').value = item.postcode || '';
+          div.querySelector('.ae-country').value  = item.country || 'United Kingdom';
+          div.querySelector('.ae-move-in').value  = item.moveIn || '';
+          div.querySelector('.ae-move-out').value = item.moveOut || '';
+          const isCur = div.querySelector('.ae-current');
+          isCur.checked = !!item.isCurrent;
+          const moOut  = div.querySelector('.ae-move-out');
+          const moWrap = div.querySelector('.ae-mo-wrap');
+          const moReq  = div.querySelector('.ae-mo-req');
+          if (isCur.checked) {
+            moOut.disabled       = true;
+            moWrap.style.opacity = '0.4';
+            moReq.style.display  = 'none';
+          }
+          addrList.appendChild(div);
+        });
+        refreshRemoveButtons();
+        updateCoverage();
+        return true;
+      } catch (e) {
+        return false;
+      }
+    }
+
+    function appendEntry(focus) {
+      const entries = addrList.querySelectorAll('.addr-entry');
+      if (entries.length >= 10) return;
+      const div = buildEntry();
+      addrList.appendChild(div);
+      refreshRemoveButtons();
+      updateCoverage();
+      saveAddrDraft();
+      if (focus) div.querySelector('.ae-line1').focus();
+    }
+
+    function removeEntry(eid) {
+      const div = addrList.querySelector('[data-eid="' + eid + '"]');
+      if (div) {
+        div.remove();
+        addrList.querySelectorAll('.ae-title').forEach((t, i) => {
+          t.textContent = 'Address ' + (i + 1);
+        });
+        refreshRemoveButtons();
+        updateCoverage();
+        saveAddrDraft();
+      }
+    }
+
+    function refreshRemoveButtons() {
+      const entries = addrList.querySelectorAll('.addr-entry');
+      entries.forEach(e => {
+        const btn = e.querySelector('.ae-remove');
+        if (btn) btn.disabled = entries.length <= 1;
+      });
+    }
+
+    if (!restoreAddrDraft()) {
+      appendEntry(false);
+    }
+
+    addrList.addEventListener('input', saveAddrDraft);
+    addrList.addEventListener('change', saveAddrDraft);
+
+    document.getElementById('add-addr-btn').addEventListener('click', () => appendEntry(true));
+
+    addrList.addEventListener('click', e => {
+      const btn = e.target.closest('.ae-remove');
+      if (btn) removeEntry(btn.dataset.eid);
+    });
+
+    // ── Coverage indicator ─────────────────────────────────────────────────
+
+    function parseYM(s) {
+      if (!s || !RE_YM.test(s)) return null;
+      return [parseInt(s.slice(0, 4)), parseInt(s.slice(5, 7))];
+    }
+
+    function ymLe(a, b) {
+      return a[0] < b[0] || (a[0] === b[0] && a[1] <= b[1]);
+    }
+
+    function nextMonth(ym) {
+      let [y, m] = ym; m++;
+      if (m > 12) { m = 1; y++; }
+      return [y, m];
+    }
+
+    function ymKey(ym) {
+      return ym[0] + '-' + String(ym[1]).padStart(2, '0');
+    }
+
+    function requiredSet() {
+      const s = parseYM(winStart), e = parseYM(winEnd);
+      if (!s || !e) return new Set();
+      const set = new Set();
+      let cur = s;
+      while (ymLe(cur, e)) { set.add(ymKey(cur)); cur = nextMonth(cur); }
+      return set;
+    }
+
+    function updateCoverage() {
+      const req = requiredSet();
+      if (req.size === 0) {
+        document.getElementById('coverage-bar').textContent = 'Coverage: loading window…';
+        document.getElementById('coverage-bar').className   = 'coverage-bar cov-partial';
+        return;
+      }
+
+      const covered = new Set();
+      let hasOverlap = false;
+
+      addrList.querySelectorAll('.addr-entry').forEach(entry => {
+        const moveIn  = parseYM(entry.querySelector('.ae-move-in').value);
+        const isCur   = entry.querySelector('.ae-current').checked;
+        const moveOut = isCur ? parseYM(winEnd) : parseYM(entry.querySelector('.ae-move-out').value);
+        if (!moveIn || !moveOut || !ymLe(moveIn, moveOut)) return;
+        let cur = moveIn;
+        while (ymLe(cur, moveOut)) {
+          const k = ymKey(cur);
+          if (covered.has(k)) hasOverlap = true;
+          covered.add(k);
+          cur = nextMonth(cur);
+        }
+      });
+
+      const inWin    = [...covered].filter(m => req.has(m)).length;
+      const total    = req.size;
+      const complete = (inWin === total) && !hasOverlap;
+      const el       = document.getElementById('coverage-bar');
+
+      if (complete) {
+        el.textContent = '✓ Coverage complete: ' + inWin + '/' + total + ' months (' + winStart + ' → ' + winEnd + ')';
+        el.className   = 'coverage-bar cov-ok';
+      } else if (hasOverlap) {
+        el.textContent = '⚠ Overlapping entries — ' + inWin + '/' + total + ' months covered';
+        el.className   = 'coverage-bar cov-err';
+      } else {
+        el.textContent = 'Coverage: ' + inWin + '/' + total + ' months (' + winStart + ' → ' + winEnd + ')';
+        el.className   = 'coverage-bar cov-partial';
+      }
+    }
+
+    // ── Address history submission ──────────────────────────────────────────
+
+    document.getElementById('addr-save-btn').addEventListener('click', async function () {
+      document.querySelectorAll('.ae-err').forEach(e => { e.textContent = ''; });
+      document.getElementById('addr-form-err').textContent = '';
+
+      const entries = addrList.querySelectorAll('.addr-entry');
+      const payload = [];
+      let clientOk  = true;
+
+      entries.forEach(entry => {
+        const line1    = entry.querySelector('.ae-line1').value.trim();
+        const line2    = entry.querySelector('.ae-line2').value.trim();
+        const city     = entry.querySelector('.ae-city').value.trim();
+        const postcode = entry.querySelector('.ae-postcode').value.trim();
+        const country  = entry.querySelector('.ae-country').value.trim();
+        const moveIn   = entry.querySelector('.ae-move-in').value;
+        const isCur    = entry.querySelector('.ae-current').checked;
+        const moveOut  = isCur ? '' : entry.querySelector('.ae-move-out').value;
+        const errEl    = entry.querySelector('.ae-err');
+
+        const msgs = [];
+        if (!line1)    msgs.push('Address line 1 is required.');
+        if (!city)     msgs.push('City is required.');
+        if (!postcode) msgs.push('Postcode is required.');
+        if (!country)  msgs.push('Country is required.');
+        if (!moveIn)   msgs.push('Move-in date is required.');
+        else if (!RE_YM.test(moveIn)) msgs.push('Move-in must be YYYY-MM.');
+        if (!isCur) {
+          if (!moveOut) msgs.push('Move-out date required (or check "current address").');
+          else if (!RE_YM.test(moveOut)) msgs.push('Move-out must be YYYY-MM.');
+          else if (moveOut < moveIn)     msgs.push('Move-out must not be before move-in.');
+        }
+        if (msgs.length) { errEl.textContent = msgs.join(' '); clientOk = false; }
+
+        payload.push({
+          line1, line2: line2 || null,
+          city, postcode, country,
+          moveIn,
+          moveOut: isCur ? null : (moveOut || null),
+          isCurrent: isCur,
+        });
+      });
+
+      if (!clientOk) return;
+
+      this.disabled    = true;
+      this.textContent = 'Submitting…';
+
+      try {
+        const { ok, status, data } = await postJSON('/api/addr-history', {
+          session_id: sid,
+          addresses:  payload,
+        });
+
+        if (ok) {
+          updateBreadcrumb('addr_history');
+          showPanel('panel-poa');
+        } else if (status === 422 && data.errors) {
+          const formErr = document.getElementById('addr-form-err');
+          for (const [key, msg] of Object.entries(data.errors)) {
+            if (key === 'addresses') {
+              formErr.textContent = msg;
+            } else {
+              const m = key.match(/^addresses\[(\d+)\]/);
+              if (m) {
+                const idx = parseInt(m[1]);
+                const ents = addrList.querySelectorAll('.addr-entry');
+                if (ents[idx]) {
+                  const el = ents[idx].querySelector('.ae-err');
+                  if (el) el.textContent = (el.textContent ? el.textContent + ' ' : '') + msg;
+                }
+              }
+            }
+          }
+        } else {
+          document.getElementById('addr-form-err').textContent = data.error || 'Server error.';
+        }
+      } catch {
+        document.getElementById('addr-form-err').textContent = 'Network error. Is the server running?';
+      } finally {
+        this.disabled    = false;
+        this.textContent = 'Submit Address History →';
+      }
+    });
+
+    // ════════════════════════════════════════════════════════════════════════
+    // PANEL B — Proof of Address
+    // ════════════════════════════════════════════════════════════════════════
+
+    const POA_DRAFT_KEY = 'poa_type_draft_' + sid;
+    const poaTypeSelect = document.getElementById('poa-doc-type');
+    if (poaTypeSelect) {
+      try {
+        const savedPoa = sessionStorage.getItem(POA_DRAFT_KEY);
+        if (savedPoa) poaTypeSelect.value = savedPoa;
+      } catch (e) {}
+      poaTypeSelect.addEventListener('change', () => {
+        try { sessionStorage.setItem(POA_DRAFT_KEY, poaTypeSelect.value); } catch (e) {}
+      });
+    }
+
+    document.getElementById('poa-file').addEventListener('change', function () {
+      const name = this.files && this.files[0] ? this.files[0].name : '';
+      const zone = document.getElementById('poa-zone');
+      const disp = document.getElementById('poa-file-name');
+      if (name) {
+        zone.classList.add('has-file');
+        disp.textContent = 'Selected: ' + name;
+      } else {
+        zone.classList.remove('has-file');
+        disp.textContent = '';
+      }
+    });
+
+    document.getElementById('poa-save-btn').addEventListener('click', async function () {
+      document.getElementById('poa-err').textContent = '';
+
+      const docType = document.getElementById('poa-doc-type').value;
+      if (!docType) {
+        document.getElementById('poa-err').textContent = 'Please select a proof-of-address document type.';
+        return;
+      }
+
+      const fi          = document.getElementById('poa-file');
+      const poaFile     = fi.files && fi.files[0];
+      const poaFilename = poaFile ? poaFile.name : '';
+      const poaSelected = !!poaFile;
+
+      this.disabled    = true;
+      this.textContent = 'Saving…';
+
+      try {
+        const { ok, status, data } = await postJSON('/api/poa', {
+          session_id:  sid,
+          poaDocType:  docType,
+          poaFilename,
+          poaSelected,
+        });
+
+        if (ok) {
+          let uploadWarning = null;
+          if (poaFile) {
+            try {
+              const b64 = await _readFileAsBase64(poaFile);
+              const upR = await fetch('/api/upload-doc', {
+                method:  'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body:    JSON.stringify({
+                  session_id:   sid,
+                  category:     'poa-doc',
+                  data_b64:     b64,
+                  content_type: poaFile.type || '',
+                  filename:     poaFile.name,
+                }),
+              });
+              const upD = await upR.json();
+              if (!upR.ok) {
+                uploadWarning = 'Warning: proof-of-address file could not be saved — ' +
+                  (upD.error || 'server error') + '. Continuing.';
+                console.warn('[lab] POA upload failed:', upD.error);
+              }
+            } catch (e) {
+              uploadWarning = 'Warning: proof-of-address file could not be saved (network error). Continuing.';
+              console.warn('[lab] POA upload error:', e.message);
+            }
+          }
+          updateBreadcrumb('poa_done');
+          showPanel('panel-face');
+          await initFacePanel('poa_done');
+          // F3: Show upload warning in face panel AFTER initFacePanel (which resets face-msg)
+          if (uploadWarning) {
+            setFaceMsg(uploadWarning, 'err');
+          }
+        } else if (status === 422 && data.errors) {
+          document.getElementById('poa-err').textContent =
+            data.errors.poaDocType || Object.values(data.errors)[0] || 'Validation error.';
+        } else {
+          document.getElementById('poa-err').textContent = data.error || 'Server error.';
+        }
+      } catch {
+        document.getElementById('poa-err').textContent = 'Network error. Is the server running?';
+      } finally {
+        this.disabled    = false;
+        this.textContent = 'Confirm proof of address →';
+      }
+    });
+
+    // ════════════════════════════════════════════════════════════════════════
+    // PANEL C — Face Verification with local test capture
+    // ════════════════════════════════════════════════════════════════════════
+
+    let cameraStream    = null;   // MediaStream
+    let mediaRecorder   = null;   // MediaRecorder
+    let recordedChunks  = [];     // video Blob chunks
+    let capturedDataUrl = null;   // most recently captured still (data URL)
+    let recordedBlob    = null;   // most recently stopped recording (Blob)
+    let faceCompleted   = false;
+
+    let scanAutoMode   = true;    // true = auto-scan video, false = manual still capture
+    let scanTimeouts   = [];      // pending timeouts for scan sequence (so they can be cancelled)
+
+    // ── Real face-detection state ──────────────────────────────────────────
+    let fcStage       = 'IDLE';  // IDLE | POSITION | TURN_LEFT | TURN_RIGHT | RETURN | RECORDING | DONE
+    let fcStableCount = 0;       // consecutive stable frames counter
+    let fcDetectOn    = false;   // RAF detection loop running
+    let _fcDet        = null;    // cached FaceDetector instance
+    let fcVerified    = false;   // true once recording saved in real-detection flow
+
+    // Sub-sections in Panel C
+    const FC_SUBS = [
+      'fc-consent', 'fc-camera-area', 'fc-still-review',
+      'fc-video-review', 'fc-artifacts-section',
+    ];
+
+    function showFaceSub(name) {
+      FC_SUBS.forEach(id => {
+        document.getElementById(id).hidden = (id !== name);
+      });
+      document.getElementById('fc-sep').hidden = (name !== 'fc-artifacts-section');
+    }
+
+    function setFaceMsg(text, cls) {
+      const el = document.getElementById('face-msg');
+      el.textContent = text;
+      el.className   = 'status-msg ' + (cls || 'muted');
+    }
+
+    // ── initFacePanel ──────────────────────────────────────────────────────
+
+    async function initFacePanel(status) {
+      if (status === 'completed') {
+        faceCompleted = true;
+        updateBreadcrumb('completed');
+        showPanel('panel-complete');
+        return;
+      }
+
+      if (status === 'face_check') {
+        // face_sim_started was already fired — show artifacts or consent
+        const arts = await fetchArtifacts();
+        document.getElementById('face-complete-btn').hidden = false;
+        if (arts.length > 0) {
+          renderArtifacts(arts, false);
+          showFaceSub('fc-artifacts-section');
+        } else {
+          showFaceSub('fc-consent');
+        }
+        setFaceMsg('Ready to complete. Capture is optional.', 'muted');
+        return;
+      }
+
+      // poa_done — show consent first
+      showFaceSub('fc-consent');
+      setFaceMsg('', 'muted');
+    }
+
+    // ── Fetch artifacts from server ────────────────────────────────────────
+
+    async function fetchArtifacts() {
+      try {
+        const res  = await fetch('/api/record/artifacts?sid=' + encodeURIComponent(sid));
+        const data = await res.json();
+        return data.artifacts || [];
+      } catch {
+        return [];
+      }
+    }
+
+    async function loadAndShowArtifacts(readOnly) {
+      const arts = await fetchArtifacts();
+      renderArtifacts(arts, readOnly);
+      showFaceSub('fc-artifacts-section');
+    }
+
+    function fmtBytes(n) {
+      if (n < 1024)        return n + ' B';
+      if (n < 1024 * 1024) return (n / 1024).toFixed(1) + ' KB';
+      return (n / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    function renderArtifacts(arts, readOnly) {
+      arts = arts.filter(a => a.name !== '04-session-events.txt' && a.name !== 'details.txt');
+      const list  = document.getElementById('fc-artifacts-list');
+      const addIm = document.getElementById('fc-add-image-btn');
+      const addVi = document.getElementById('fc-add-video-btn');
+
+      if (arts.length === 0) {
+        list.innerHTML = '<p style="font-size:.82rem;color:var(--mut);text-align:center;padding:.5rem 0">No artifacts saved yet.</p>';
+      } else {
+        list.innerHTML = arts.map(a => {
+          const viewUrl = '/api/record/artifact?sid=' + encodeURIComponent(sid) + '&name=' + encodeURIComponent(a.name);
+          const canDel  = !readOnly && (a.name === '02-facial-capture.jpg' || a.name === '03-facial-verification.webm');
+          const delBtn  = canDel
+            ? `<button class="btn-del" data-artifact="${a.name}">Delete</button>`
+            : '';
+          const viewBtn = (a.name.endsWith('.jpg') || a.name.endsWith('.webm'))
+            ? `<a class="btn-view" href="${viewUrl}" target="_blank" rel="noopener">View</a>`
+            : `<a class="btn-view" href="${viewUrl}" target="_blank" rel="noopener">Open</a>`;
+          return `<div class="artifact-item">
+            <div class="art-info">
+              <span class="art-name">${escHtml(a.name)}</span>
+              <span class="art-size">${fmtBytes(a.size)}</span>
+            </div>
+            <div class="art-actions">${viewBtn}${delBtn}</div>
+          </div>`;
+        }).join('');
+      }
+
+      // Add/remove capture buttons based on what already exists
+      const names = arts.map(a => a.name);
+      if (addIm) addIm.hidden = readOnly || names.includes('02-facial-capture.jpg');
+      if (addVi) addVi.hidden = readOnly || names.includes('03-facial-verification.webm');
+
+      // Wire delete buttons
+      list.querySelectorAll('.btn-del').forEach(btn => {
+        btn.addEventListener('click', async function () {
+          const artifact = this.dataset.artifact;
+          if (!confirm('Delete ' + artifact + '? This cannot be undone.')) return;
+          await deleteArtifact(artifact);
+        });
+      });
+    }
+
+    async function deleteArtifact(artifact) {
+      try {
+        const { ok, data } = await postJSON('/api/record/delete', { session_id: sid, artifact });
+        if (ok) {
+          await loadAndShowArtifacts(false);
+          setFaceMsg(artifact + ' deleted.', 'muted');
+        } else {
+          setFaceMsg('Delete failed: ' + (data.error || 'unknown error'), 'err');
+        }
+      } catch {
+        setFaceMsg('Network error during delete.', 'err');
+      }
+    }
+
+    // ── Escape helper ──────────────────────────────────────────────────────
+
+    function escHtml(s) {
+      return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    // ── Camera helpers ─────────────────────────────────────────────────────
+
+    async function requestCamera() {
+      document.getElementById('fc-consent-err').textContent = '';
+      try {
+        // Prefer front camera on phones; fall back to any camera if unavailable
+        const constraints = {
+          video: { facingMode: { ideal: 'user' }, width: { ideal: 1280 }, height: { ideal: 720 } },
+          audio: false,
+        };
+        try {
+          cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
+        } catch (_) {
+          cameraStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        }
+
+        const liveEl = document.getElementById('fc-live');
+        liveEl.srcObject = cameraStream;
+        await liveEl.play();
+        showFaceSub('fc-camera-area');
+        document.getElementById('fc-rec-indicator').hidden = true;
+        document.getElementById('fc-cam-status').textContent = '';
+        setFaceMsg('', 'muted');
+
+        if (scanAutoMode) {
+          _showScannerMode();
+          startFaceDetection();
+        } else {
+          _showStillCaptureMode();
+        }
+
+        // Detect stream ending (e.g. another app takes camera, orientation change)
+        cameraStream.getTracks().forEach(track => {
+          track.addEventListener('ended', () => {
+            cameraStream = null;
+            mediaRecorder = null;
+            showFaceSub('fc-consent');
+            setFaceMsg('Camera stream ended. You can restart it.', 'muted');
+          });
+        });
+
+        fetch('/api/record/event', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ session_id: sid, event: 'CAMERA_STARTED' }),
+        }).catch(() => {});
+
+      } catch (err) {
+        let msg;
+        if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+          msg = 'Camera permission denied. Allow camera in browser settings, or continue without camera.';
+        } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
+          msg = 'No camera found on this device. Continue without camera.';
+        } else if (err.name === 'NotReadableError' || err.name === 'TrackStartError') {
+          msg = 'Camera is in use by another app. Close other apps and try again.';
+        } else if (err.name === 'OverconstrainedError') {
+          msg = 'Camera constraints not met. Try again.';
+        } else {
+          msg = 'Camera not available: ' + err.message;
+        }
+        document.getElementById('fc-consent-err').textContent = msg;
+      }
+    }
+
+    function stopCamera() {
+      cancelFaceDetection();
+      cancelScanSequence();
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(t => t.stop());
+        cameraStream = null;
+      }
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+        mediaRecorder = null;
+      }
+      const liveEl = document.getElementById('fc-live');
+      liveEl.srcObject = null;
+
+      fetch('/api/record/event', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session_id: sid, event: 'CAMERA_STOPPED' }),
+      }).catch(() => {});
+    }
+
+    // ── Scanner UI helpers ─────────────────────────────────────────────────
+
+    function _updateScannerMask() {
+      const wrap = document.querySelector('.fc-scanner-wrap');
+      const bg   = document.getElementById('fc-blur-bg');
+      if (!wrap || !bg) return;
+      const dw   = wrap.offsetWidth || 320;
+      const svgW = Math.min(0.54 * dw, 210);
+      const rx   = (88 / 200) * svgW;
+      const ry   = (118 / 200) * svgW;
+      bg.style.setProperty('--mask-rx', rx.toFixed(1) + 'px');
+      bg.style.setProperty('--mask-ry', ry.toFixed(1) + 'px');
+    }
+
+    function _showScannerMode() {
+      document.getElementById('fc-still-cam-btns').hidden = true;
+      const oval = document.getElementById('fc-oval-el');
+      oval.classList.remove('scanning');
+      oval.classList.add('idle');
+      document.getElementById('fc-scan-line').classList.remove('running');
+      const instr = document.getElementById('fc-scanner-instr');
+      instr.textContent = 'Position your face inside the oval';
+      instr.className   = 'fc-scanner-instruction';
+      _updateScannerMask();
+    }
+
+    function _showStillCaptureMode() {
+      document.getElementById('fc-still-cam-btns').hidden = false;
+      const oval = document.getElementById('fc-oval-el');
+      oval.classList.remove('scanning', 'idle');
+      document.getElementById('fc-scan-line').classList.remove('running');
+      const instr = document.getElementById('fc-scanner-instr');
+      instr.textContent = 'Frame your face and tap Capture';
+      instr.className   = 'fc-scanner-instruction mut';
+      _updateScannerMask();
+    }
+
+    function cancelScanSequence() {
+      scanTimeouts.forEach(t => clearTimeout(t));
+      scanTimeouts = [];
+      const oval = document.getElementById('fc-oval-el');
+      if (oval) {
+        oval.classList.remove('scanning');
+        oval.classList.add('idle');
+      }
+      const sl = document.getElementById('fc-scan-line');
+      if (sl) sl.classList.remove('running');
+    }
+
+    // ── Face Detection Configuration ──────────────────────────────────────
+    // All thresholds are explicit constants — change here to tune behaviour.
+    const FC_CFG = {
+      MIN_FACE:      0.18,  // face bbox width / video width — below: move closer
+      MAX_FACE:      0.70,  // above: move back
+      CENTER_TOL:    0.35,  // max normalised dist from oval centre (units of oval rx/ry)
+      STABLE_FRAMES: 20,    // frames face must hold position before stage advances (~1 s at 20 fps)
+      TURN_FRAMES:   10,    // frames a head turn must be held before accepting
+      // Nose offset / inter-eye distance.  positive → user turned LEFT (raw, non-mirrored coords)
+      TURN_THRESH:   0.25,
+      RECORD_SECS:   5,     // seconds of video recorded once all stages pass
+    };
+
+    // ── Top-level instruction helper (used by detection; local version inside startScanSequence shadows this) ──
+    function setScanInstr(text, cls) {
+      const el = document.getElementById('fc-scanner-instr');
+      if (!el) return;
+      el.textContent = text;
+      el.className   = 'fc-scanner-instruction' + (cls ? ' ' + cls : '');
+    }
+
+    // ── Get or create FaceDetector (returns null if browser doesn't support it) ──
+    function _getFaceDetector() {
+      if (_fcDet) return _fcDet;
+      if (typeof FaceDetector === 'undefined') return null;
+      try {
+        _fcDet = new FaceDetector({ fastMode: true, maxDetectedFaces: 1 });
+        return _fcDet;
+      } catch (e) { return null; }
+    }
+
+    // ── Compute oval bounds in video-pixel coordinates ──────────────────────
+    // The oval SVG is centred in the container and has viewBox "0 0 200 260"
+    // with ellipse cx=100 cy=130 rx=88 ry=118.  CSS: width=54% (max 210px).
+    function _getOvalVidPx(liveEl) {
+      const vw   = liveEl.videoWidth  || 640;
+      const vh   = liveEl.videoHeight || 480;
+      const dw   = liveEl.offsetWidth || 320;
+      const svgW = Math.min(0.54 * dw, 210);     // CSS px width of the SVG
+      const scl  = vw / dw;                       // video px per CSS px
+      return {
+        cx: vw / 2,
+        cy: vh / 2,
+        rx: (88 / 200) * svgW * scl,
+        ry: (118 / 260) * svgW * (260 / 200) * scl,
+      };
+    }
+
+    // ── Estimate horizontal head turn from FaceDetector landmarks ──────────
+    // Returns (nose.x − eye_midpoint.x) / inter_eye_distance in raw pixel space.
+    // Positive → user turned LEFT (nose shifts toward camera-right in raw frame).
+    // Returns null if landmarks unavailable or inter-eye distance too small.
+    function _estimateYaw(face) {
+      const lms   = face.landmarks || [];
+      const eyes  = lms.filter(l => l.type === 'eye');
+      const noses = lms.filter(l => l.type === 'nose');
+      if (eyes.length < 2 || noses.length === 0) return null;
+      eyes.sort((a, b) => a.location.x - b.location.x);
+      const ieD = eyes[1].location.x - eyes[0].location.x;
+      if (ieD < 8) return null;
+      const midX = (eyes[0].location.x + eyes[1].location.x) / 2;
+      return (noses[0].location.x - midX) / ieD;
+    }
+
+    // ── Set oval colour class ──────────────────────────────────────────────
+    function _setOvalCls(cls) {
+      const el = document.getElementById('fc-oval-el');
+      if (!el) return;
+      el.classList.remove('ok', 'err');
+      if (cls) el.classList.add(cls);
+    }
+
+    // ── Per-frame detection state machine ─────────────────────────────────
+    function _processDetections(dets, liveEl) {
+      if (fcStage === 'RECORDING' || fcStage === 'DONE') return;
+      const oval = _getOvalVidPx(liveEl);
+      const vw   = liveEl.videoWidth || 640;
+      const ov   = document.getElementById('fc-oval-el');
+      const sl   = document.getElementById('fc-scan-line');
+
+      // ── No face detected ────────────────────────────────────────────────
+      if (dets.length === 0) {
+        fcStableCount = 0;
+        setScanInstr('Face not detected');
+        if (ov) { ov.className = 'fc-oval-ellipse idle'; }
+        if (sl) sl.classList.remove('running');
+        return;
+      }
+
+      const face  = dets[0];
+      const bb    = face.boundingBox;
+      const ratio = bb.width / vw;
+
+      // ── Size checks ─────────────────────────────────────────────────────
+      if (ratio < FC_CFG.MIN_FACE) {
+        fcStableCount = 0;
+        setScanInstr('Move closer');
+        _setOvalCls('err');
+        return;
+      }
+      if (ratio > FC_CFG.MAX_FACE) {
+        fcStableCount = 0;
+        setScanInstr('Move back');
+        _setOvalCls('err');
+        return;
+      }
+
+      // ── Face centre vs oval centre ───────────────────────────────────────
+      const faceCX = bb.left + bb.width  / 2;
+      const faceCY = bb.top  + bb.height / 2;
+      const dxN    = (faceCX - oval.cx) / oval.rx;
+      const dyN    = (faceCY - oval.cy) / oval.ry;
+      const dist   = Math.sqrt(dxN * dxN + dyN * dyN);
+
+      // ── POSITION ─────────────────────────────────────────────────────────
+      if (fcStage === 'IDLE' || fcStage === 'POSITION') {
+        fcStage = 'POSITION';
+        if (dist > FC_CFG.CENTER_TOL) {
+          fcStableCount = 0;
+          setScanInstr('Center your face');
+          if (ov) { ov.className = 'fc-oval-ellipse idle'; }
+          if (sl) sl.classList.remove('running');
+          return;
+        }
+        fcStableCount++;
+        if (ov) { ov.className = 'fc-oval-ellipse scanning'; }
+        if (sl) sl.classList.add('running');
+        setScanInstr('Hold still…', 'mut');
+        if (fcStableCount >= FC_CFG.STABLE_FRAMES) {
+          fcStableCount = 0;
+          fcStage = 'TURN_LEFT';
+          if (ov) { ov.className = 'fc-oval-ellipse ok'; }
+          if (sl) sl.classList.remove('running');
+          setScanInstr('Turn your head left', 'ok');
+        }
+        return;
+      }
+
+      // ── TURN_LEFT ─────────────────────────────────────────────────────────
+      if (fcStage === 'TURN_LEFT') {
+        const yaw = _estimateYaw(face);
+        // positive yaw = user turned LEFT in raw (non-mirrored) space
+        const turned = yaw !== null ? yaw > FC_CFG.TURN_THRESH
+                                    : false;  // no landmarks: wait, don't guess direction
+        if (turned) {
+          fcStableCount++;
+          setScanInstr('Turn your head left', 'ok');
+          _setOvalCls('ok');
+          if (fcStableCount >= FC_CFG.TURN_FRAMES) {
+            fcStableCount = 0;
+            fcStage = 'TURN_RIGHT';
+            setScanInstr('Turn your head right');
+            if (ov) ov.className = 'fc-oval-ellipse idle';
+          }
+        } else {
+          fcStableCount = 0;
+          setScanInstr('Turn your head left');
+          if (ov) ov.className = 'fc-oval-ellipse idle';
+        }
+        return;
+      }
+
+      // ── TURN_RIGHT ────────────────────────────────────────────────────────
+      if (fcStage === 'TURN_RIGHT') {
+        const yaw = _estimateYaw(face);
+        const turned = yaw !== null ? yaw < -FC_CFG.TURN_THRESH
+                                    : false;
+        if (turned) {
+          fcStableCount++;
+          setScanInstr('Turn your head right', 'ok');
+          _setOvalCls('ok');
+          if (fcStableCount >= FC_CFG.TURN_FRAMES) {
+            fcStableCount = 0;
+            fcStage = 'RETURN';
+            setScanInstr('Face the camera');
+            if (ov) ov.className = 'fc-oval-ellipse idle';
+          }
+        } else {
+          fcStableCount = 0;
+          setScanInstr('Turn your head right');
+          if (ov) ov.className = 'fc-oval-ellipse idle';
+        }
+        return;
+      }
+
+      // ── RETURN (face camera and hold still) ───────────────────────────────
+      if (fcStage === 'RETURN') {
+        const yaw     = _estimateYaw(face);
+        const frontal = yaw === null || Math.abs(yaw) < FC_CFG.TURN_THRESH * 0.7;
+        if (dist > FC_CFG.CENTER_TOL || !frontal) {
+          fcStableCount = 0;
+          setScanInstr('Face the camera');
+          if (ov) { ov.className = 'fc-oval-ellipse idle'; }
+          if (sl) sl.classList.remove('running');
+          return;
+        }
+        fcStableCount++;
+        if (ov) { ov.className = 'fc-oval-ellipse scanning'; }
+        if (sl) sl.classList.add('running');
+        setScanInstr('Hold still…', 'mut');
+        if (fcStableCount >= FC_CFG.STABLE_FRAMES) {
+          fcStableCount = 0;
+          fcStage = 'RECORDING';
+          if (ov) { ov.className = 'fc-oval-ellipse ok'; }
+          if (sl) sl.classList.remove('running');
+          setScanInstr('Position verified', 'ok');
+          setTimeout(_triggerAutoRecord, 700);
+        }
+        return;
+      }
+    }
+
+    function _triggerAutoRecord() {
+      if (!cameraStream || !fcDetectOn) return;
+      const ov = document.getElementById('fc-oval-el');
+      const sl = document.getElementById('fc-scan-line');
+      if (ov) { ov.className = 'fc-oval-ellipse scanning'; }
+      if (sl) sl.classList.add('running');
+      setScanInstr('Verifying…', 'ok');
+      startRecording();
+      setTimeout(() => {
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') stopRecording();
+        setScanInstr('Processing…', 'mut');
+      }, FC_CFG.RECORD_SECS * 1000);
+    }
+
+    // ── Detection RAF loop ─────────────────────────────────────────────────
+    async function _fcDetectFrame() {
+      if (!fcDetectOn) return;
+      const liveEl = document.getElementById('fc-live');
+      if (!cameraStream || !liveEl.videoWidth) {
+        if (fcDetectOn) requestAnimationFrame(_fcDetectFrame);
+        return;
+      }
+      const det  = _getFaceDetector();
+      let   dets = [];
+      if (det) { try { dets = await det.detect(liveEl); } catch (e) {} }
+      if (!fcDetectOn) return;  // cancelled during await
+      _processDetections(dets, liveEl);
+      requestAnimationFrame(_fcDetectFrame);
+    }
+
+    function cancelFaceDetection() {
+      fcDetectOn    = false;
+      fcStage       = 'IDLE';
+      fcStableCount = 0;
+    }
+
+    // ── Start real-detection sequence (falls back to timer if FaceDetector unavailable) ──
+    function startFaceDetection() {
+      cancelFaceDetection();
+      cancelScanSequence();
+      const det = _getFaceDetector();
+      if (!det) {
+        // Browser doesn't support Shape Detection API — use timer-based fallback
+        document.getElementById('fc-cam-status').textContent =
+          'Real-time detection unavailable — use Chrome for full head-turn verification.';
+        startScanSequence();
+        return;
+      }
+      fcDetectOn    = true;
+      fcStage       = 'POSITION';
+      fcStableCount = 0;
+      const ov = document.getElementById('fc-oval-el');
+      const sl = document.getElementById('fc-scan-line');
+      if (ov) { ov.className = 'fc-oval-ellipse idle'; }
+      if (sl) sl.classList.remove('running');
+      document.getElementById('fc-cam-status').textContent = 'Camera ready';
+      setScanInstr('Position your face inside the oval');
+      requestAnimationFrame(_fcDetectFrame);
+    }
+
+    function startScanSequence() {
+      cancelScanSequence();
+      _showScannerMode();
+
+      const instr = document.getElementById('fc-scanner-instr');
+      const oval  = document.getElementById('fc-oval-el');
+      const scanLine = document.getElementById('fc-scan-line');
+
+      function setScanInstr(text, cls) {
+        if (!cameraStream) return;
+        instr.textContent = text;
+        instr.className   = 'fc-scanner-instruction' + (cls ? ' ' + cls : '');
+      }
+
+      // Timed guided instruction sequence
+      scanTimeouts.push(setTimeout(() => setScanInstr('Position your face inside the oval'),       0));
+      scanTimeouts.push(setTimeout(() => setScanInstr('Center your face'),                       2000));
+      scanTimeouts.push(setTimeout(() => setScanInstr('Hold still…'),                       3500));
+
+      // Auto-start recording at 4.5 s
+      scanTimeouts.push(setTimeout(() => {
+        if (!cameraStream) return;
+        oval.classList.remove('idle');
+        oval.classList.add('scanning');
+        scanLine.classList.add('running');
+        setScanInstr('Verifying…', 'mut');
+        startRecording();
+      }, 4500));
+
+      // Auto-stop recording at 4.5 + 5 = 9.5 s
+      scanTimeouts.push(setTimeout(() => {
+        if (!cameraStream) return;
+        scanLine.classList.remove('running');
+        oval.classList.remove('scanning');
+        oval.classList.add('idle');
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+          stopRecording();
+        }
+        setScanInstr('Verification complete', 'ok');
+      }, 9500));
+    }
+
+    // ── Still capture ──────────────────────────────────────────────────────
+
+    function captureStill() {
+      const liveEl = document.getElementById('fc-live');
+      const canvas  = document.createElement('canvas');
+      canvas.width  = liveEl.videoWidth  || 640;
+      canvas.height = liveEl.videoHeight || 480;
+      canvas.getContext('2d').drawImage(liveEl, 0, 0);
+      capturedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+
+      document.getElementById('fc-still-img').src = capturedDataUrl;
+      document.getElementById('fc-still-err').textContent = '';
+      showFaceSub('fc-still-review');
+    }
+
+    async function saveStill() {
+      if (!capturedDataUrl) return;
+      const btn = document.getElementById('fc-still-save-btn');
+      btn.disabled    = true;
+      btn.textContent = 'Saving…';
+      document.getElementById('fc-still-err').textContent = '';
+
+      const b64 = capturedDataUrl.split(',')[1];
+      try {
+        const { ok, status, data } = await postJSON('/api/record/save', {
+          session_id: sid,
+          artifact:   '02-facial-capture.jpg',
+          data_b64:   b64,
+          force:      false,
+        });
+
+        if (ok) {
+          capturedDataUrl = null;
+          await loadAndShowArtifacts(false);
+          setFaceMsg('Image saved.', 'ok');
+          fetch('/api/record/event', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ session_id: sid, event: 'STILL_SAVED' }),
+          }).catch(() => {});
+        } else if (status === 409 && data.error === 'file_exists') {
+          // Prompt to overwrite
+          if (confirm('An image is already saved. Replace it with this new capture?')) {
+            const { ok: ok2, data: d2 } = await postJSON('/api/record/save', {
+              session_id: sid,
+              artifact:   '02-facial-capture.jpg',
+              data_b64:   b64,
+              force:      true,
+            });
+            if (ok2) {
+              capturedDataUrl = null;
+              await loadAndShowArtifacts(false);
+              setFaceMsg('Image replaced.', 'ok');
+            } else {
+              document.getElementById('fc-still-err').textContent = d2.error || 'Save failed.';
+            }
+          }
+        } else {
+          document.getElementById('fc-still-err').textContent = data.error || data.message || 'Save failed.';
+        }
+      } catch {
+        document.getElementById('fc-still-err').textContent = 'Network error.';
+      } finally {
+        btn.disabled    = false;
+        btn.textContent = 'Save image';
+      }
+    }
+
+    // ── Video recording ────────────────────────────────────────────────────
+
+    function startRecording() {
+      if (!cameraStream) return;
+      recordedChunks = [];
+      recordedBlob   = null;
+
+      const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp8')
+        ? 'video/webm;codecs=vp8'
+        : MediaRecorder.isTypeSupported('video/webm')
+        ? 'video/webm'
+        : '';
+
+      const opts = mimeType ? { mimeType } : {};
+      try {
+        mediaRecorder = new MediaRecorder(cameraStream, opts);
+      } catch {
+        mediaRecorder = new MediaRecorder(cameraStream);
+      }
+
+      mediaRecorder.ondataavailable = e => {
+        if (e.data && e.data.size > 0) recordedChunks.push(e.data);
+      };
+
+      mediaRecorder.onstop = () => {
+        recordedBlob = new Blob(recordedChunks, { type: 'video/webm' });
+        const url    = URL.createObjectURL(recordedBlob);
+        const replay = document.getElementById('fc-video-replay');
+        replay.src   = url;
+        document.getElementById('fc-video-err').textContent = '';
+        showFaceSub('fc-video-review');
+        saveRecording();
+      };
+
+      mediaRecorder.start(500); // collect chunks every 500ms
+
+      // Update UI
+      document.getElementById('fc-cam-status').textContent = '';
+
+      fetch('/api/record/event', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session_id: sid, event: 'RECORDING_STARTED' }),
+      }).catch(() => {});
+    }
+
+    function stopRecording() {
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+      }
+      document.getElementById('fc-cam-status').textContent = '';
+
+      fetch('/api/record/event', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session_id: sid, event: 'RECORDING_STOPPED' }),
+      }).catch(() => {});
+    }
+
+    function _xhrUploadVideo(blob, uploadUrl) {
+      return new Promise((resolve) => {
+        const xhr = new XMLHttpRequest();
+        const progressWrap = document.getElementById('fc-vid-progress');
+        const progressBar  = document.getElementById('fc-vid-progress-bar');
+        const progressLbl  = document.getElementById('fc-vid-progress-label');
+
+        progressWrap.style.display = 'block';
+        progressBar.style.width    = '0%';
+        progressLbl.textContent    = 'Uploading…';
+
+        xhr.upload.addEventListener('progress', e => {
+          if (e.lengthComputable) {
+            const pct = Math.round(e.loaded / e.total * 100);
+            progressBar.style.width = pct + '%';
+            progressLbl.textContent = 'Uploading… ' + pct + '%';
+          }
+        });
+
+        xhr.addEventListener('load', () => {
+          progressWrap.style.display = 'none';
+          progressLbl.textContent    = '';
+          try {
+            resolve({ ok: xhr.status >= 200 && xhr.status < 300, status: xhr.status, data: JSON.parse(xhr.responseText) });
+          } catch {
+            resolve({ ok: false, status: xhr.status, data: { error: 'Invalid server response.' } });
+          }
+        });
+
+        xhr.addEventListener('error', () => {
+          progressWrap.style.display = 'none';
+          progressLbl.textContent    = '';
+          resolve({ ok: false, status: 0, data: { error: 'Network error.' } });
+        });
+
+        xhr.open('POST', uploadUrl);
+        xhr.setRequestHeader('Content-Type', 'video/webm');
+        xhr.send(blob);
+      });
+    }
+
+    async function saveRecording() {
+      if (!recordedBlob) return;
+      const btn = document.getElementById('fc-video-save-btn');
+      if (btn) {
+        btn.disabled    = true;
+        btn.textContent = 'Saving…';
+      }
+      document.getElementById('fc-video-err').textContent = '';
+
+      const baseUrl = '/api/record/save?sid=' + encodeURIComponent(sid) + '&name=03-facial-verification.webm';
+
+      const tryUpload = async (force) => {
+        return _xhrUploadVideo(recordedBlob, force ? baseUrl + '&force=1' : baseUrl);
+      };
+
+      try {
+        let { ok, status, data } = await tryUpload(false);
+
+        if (status === 409 && data.error === 'file_exists') {
+          ({ ok, data } = await tryUpload(true));
+        }
+
+        if (ok) {
+          recordedBlob = null;
+          fcVerified   = true;
+          document.getElementById('fc-video-action-row').hidden = false;
+          setFaceMsg('Face verification recorded successfully.', 'ok');
+          const completeBtn = document.getElementById('face-complete-btn');
+          completeBtn.hidden = false;
+          fetch('/api/record/event', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ session_id: sid, event: 'VIDEO_SAVED' }),
+          }).catch(() => {});
+        } else {
+          document.getElementById('fc-video-err').textContent = data.error || data.message || 'Save failed.';
+        }
+      } catch {
+        document.getElementById('fc-video-err').textContent = 'Network error.';
+      } finally {
+        if (btn) {
+          btn.disabled    = false;
+          btn.textContent = 'Save recording';
+        }
+      }
+    }
+
+    // ── Consent: Allow camera ──────────────────────────────────────────────
+
+    document.getElementById('fc-allow-btn').addEventListener('click', async function () {
+      this.disabled    = true;
+      this.textContent = 'Requesting…';
+
+      // Initialise test record directory if not already done
+      try {
+        await postJSON('/api/record/init', { session_id: sid });
+      } catch { /* non-fatal */ }
+
+      // Fire face_sim_started (transitions poa_done → face_check)
+      try {
+        await postEvent('face_sim_started');
+      } catch { /* non-fatal */ }
+
+      // In real-detection mode the Complete button is revealed only after recording is saved
+      if (!_getFaceDetector()) {
+        document.getElementById('face-complete-btn').hidden = false;
+      }
+      setFaceMsg('', 'muted');
+
+      await requestCamera();
+
+      this.disabled    = false;
+      this.textContent = 'Allow camera access';
+    });
+
+    // ── Consent: Skip camera ───────────────────────────────────────────────
+
+    document.getElementById('fc-skip-btn').addEventListener('click', async function () {
+      this.disabled    = true;
+      this.textContent = 'Continuing…';
+
+      try {
+        await postJSON('/api/record/init', { session_id: sid });
+        await postEvent('face_sim_started');
+      } catch { /* non-fatal */ }
+
+      fetch('/api/record/event', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session_id: sid, event: 'CAMERA_SKIPPED_BY_USER' }),
+      }).catch(() => {});
+
+      document.getElementById('face-complete-btn').hidden = false;
+      setFaceMsg('Continuing without camera. You can complete your verification below.', 'muted');
+      await loadAndShowArtifacts(false);
+
+      this.disabled    = false;
+      this.textContent = 'Continue without camera';
+    });
+
+    // ── Camera area buttons ────────────────────────────────────────────────
+
+    document.getElementById('fc-capture-btn').addEventListener('click', captureStill);
+
+    document.getElementById('fc-rec-start-btn').addEventListener('click', startRecording);
+
+    document.getElementById('fc-rec-stop-btn').addEventListener('click', stopRecording);
+
+    document.getElementById('fc-stop-cam-btn').addEventListener('click', async function () {
+      stopCamera();
+      await loadAndShowArtifacts(false);
+    });
+
+    // ── Still review buttons ───────────────────────────────────────────────
+
+    document.getElementById('fc-still-save-btn').addEventListener('click', saveStill);
+
+    document.getElementById('fc-still-retake-btn').addEventListener('click', function () {
+      capturedDataUrl = null;
+      scanAutoMode = false;
+      showFaceSub('fc-camera-area');
+      _showStillCaptureMode();
+    });
+
+    // ── Video review buttons ───────────────────────────────────────────────
+
+    document.getElementById('fc-video-save-btn').addEventListener('click', saveRecording);
+
+    document.getElementById('fc-video-retake-btn').addEventListener('click', function () {
+      recordedBlob   = null;
+      recordedChunks = [];
+      fcVerified     = false;
+      document.getElementById('fc-video-action-row').hidden = false;
+      document.getElementById('face-complete-btn').hidden = true;
+      scanAutoMode = true;
+      showFaceSub('fc-camera-area');
+      if (cameraStream) startFaceDetection();
+    });
+
+    // ── Artifacts: add more ────────────────────────────────────────────────
+
+    document.getElementById('fc-add-image-btn').addEventListener('click', async function () {
+      scanAutoMode = false;
+      if (!cameraStream) {
+        await requestCamera();
+      } else {
+        cancelScanSequence();
+        showFaceSub('fc-camera-area');
+        _showStillCaptureMode();
+      }
+    });
+
+    document.getElementById('fc-add-video-btn').addEventListener('click', async function () {
+      scanAutoMode = true;
+      if (!cameraStream) {
+        await requestCamera();
+      } else {
+        showFaceSub('fc-camera-area');
+        startFaceDetection();
+      }
+    });
+
+    // ── Complete button ────────────────────────────────────────────────────
+
+    document.getElementById('face-complete-btn').addEventListener('click', async function () {
+      if (faceCompleted || this.disabled) return;
+      this.disabled    = true;
+      this.textContent = 'Completing…';
+      setFaceMsg('Submitting…', 'muted');
+
+      // Stop camera if still active
+      if (cameraStream) stopCamera();
+
+      try {
+        const { ok, data } = await postEvent('simulation_completed');
+        if (ok) {
+          faceCompleted = true;
+          updateBreadcrumb('completed');
+          showPanel('panel-complete');
+        } else {
+          this.disabled    = false;
+          this.textContent = 'Complete';
+          setFaceMsg('Error: ' + (data.error || 'unknown error'), 'err');
+        }
+      } catch {
+        this.disabled    = false;
+        this.textContent = 'Complete';
+        setFaceMsg('Network error.', 'err');
+      }
+    });
+
+    // ── Stop camera on page unload ─────────────────────────────────────────
+
+    window.addEventListener('pagehide', () => {
+      if (cameraStream) stopCamera();
+    });
+
+    window.addEventListener('resize', _updateScannerMask);
+
+    // ── Helpers ──────────────────────────────────────────────────────────────
+
+    function setGlobalMsg(text) {
+      const el = document.getElementById('global-msg');
+      if (el) el.textContent = text;
+    }
+
+    function showFatalError(text) {
+      setGlobalMsg(text);
+      document.querySelectorAll('.step-panel').forEach(p => { p.hidden = true; });
+    }
+
+  })();
+  </script>
+</body>
+</html>

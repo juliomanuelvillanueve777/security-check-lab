@@ -1,0 +1,32 @@
+# SSL certificates and private keys
+*.pem
+*.key
+*.crt
+
+# Local databases and SQLite files
+*.db
+*.db-shm
+*.db-wal
+
+# Storage for session records, uploaded documents, recordings
+records/
+test-records/
+
+# Python cache & virtual environments
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+env/
+
+# Migration and backup temporary files
+_backup_*
+_migration_manifest_*
+migrate_phase2a.py
+
+# OS / Editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

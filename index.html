@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Employment Verification</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="card">
+    <h1>Employment Verification</h1>
+    <p class="subtitle">Step 1 of 3 — Candidate Details</p>
+
+    <form id="id-form" novalidate>
+
+      <!-- ── Section 1: Personal Details ──────────────────────────── -->
+      <section class="form-section">
+        <h2 class="section-heading">1 · Personal Details</h2>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="firstName">First Name <span class="req" aria-hidden="true">*</span></label>
+            <input type="text" id="firstName" name="firstName" autocomplete="off"
+                   placeholder="e.g. Jane" required />
+            <span class="error" id="err-firstName"></span>
+          </div>
+          <div class="field">
+            <label for="lastName">Last Name <span class="req" aria-hidden="true">*</span></label>
+            <input type="text" id="lastName" name="lastName" autocomplete="off"
+                   placeholder="e.g. Smith" required />
+            <span class="error" id="err-lastName"></span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="dob">Date of Birth <span class="req" aria-hidden="true">*</span></label>
+          <input type="date" id="dob" name="dob" required />
+          <span class="error" id="err-dob"></span>
+        </div>
+
+        <div class="field">
+          <label for="address">Address Line <span class="req" aria-hidden="true">*</span></label>
+          <input type="text" id="address" name="address" autocomplete="off"
+                 placeholder="e.g. 10 Downing Street" required />
+          <span class="error" id="err-address"></span>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="city">Town / City <span class="req" aria-hidden="true">*</span></label>
+            <input type="text" id="city" name="city" autocomplete="off"
+                   placeholder="e.g. London" required />
+            <span class="error" id="err-city"></span>
+          </div>
+          <div class="field">
+            <label for="postcode">Postcode <span class="req" aria-hidden="true">*</span></label>
+            <input type="text" id="postcode" name="postcode" autocomplete="off"
+                   placeholder="e.g. SW1A 2AA" required />
+            <span class="error" id="err-postcode"></span>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="email">Email Address <span class="req" aria-hidden="true">*</span></label>
+            <input type="email" id="email" name="email" autocomplete="off"
+                   placeholder="test@example.com" required />
+            <span class="error" id="err-email"></span>
+          </div>
+          <div class="field">
+            <label for="phone">Phone Number <span class="req" aria-hidden="true">*</span></label>
+            <input type="tel" id="phone" name="phone" autocomplete="off"
+                   placeholder="e.g. 07700 900000" required />
+            <span class="error" id="err-phone"></span>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── Section 2: Employment Eligibility ────────────────────── -->
+      <section class="form-section">
+        <h2 class="section-heading">2 · Employment Eligibility</h2>
+
+        <div class="field">
+          <label for="rtw">
+            Right to Work Share Code
+            <span class="req" aria-hidden="true">*</span>
+          </label>
+          <input type="text" id="rtw" name="rtw" autocomplete="off"
+                 placeholder="e.g. W1X-2YZ-3AB" maxlength="11" required />
+          <span class="field-hint">Format: XXX-XXX-XXX (e.g. W1X-2YZ-3AB)</span>
+          <span class="error" id="err-rtw"></span>
+        </div>
+
+        <div class="field">
+          <label>Share Code Document <span class="req" aria-hidden="true">*</span></label>
+          <div class="upload-zone" id="rtw-zone" role="group" aria-describedby="rtw-hint">
+            <div class="upload-icon" aria-hidden="true">📋</div>
+            <p class="upload-label">Upload a screenshot or photo of your UK Visas &amp; Immigration (UKVI) share code from your GOV.UK account.</p>
+            <p class="upload-sub" id="rtw-hint">Accepted: PNG, JPG, PDF · Max 5 MB</p>
+            <input type="file" id="rtwFile" name="rtwFile" accept=".pdf,.png,.jpg,.jpeg"
+                   class="file-input" aria-label="Select share code document" />
+            <p class="upload-selected" id="rtw-selected" aria-live="polite"></p>
+          </div>
+          <span class="error" id="err-rtwFile"></span>
+        </div>
+
+        <div class="field">
+          <label for="nino">
+            National Insurance Number
+            <span class="req" aria-hidden="true">*</span>
+          </label>
+          <input type="text" id="nino" name="nino" autocomplete="off"
+                 placeholder="" maxlength="13" required />
+          <span class="field-hint">Format: AB 12 34 56 C</span>
+          <span class="error" id="err-nino"></span>
+        </div>
+      </section>
+
+      <!-- ── Section 3: Employment History ────────────────────────── -->
+      <section class="form-section">
+        <h2 class="section-heading">3 · Employment History</h2>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="employer">Most Recent Employer <span class="req" aria-hidden="true">*</span></label>
+            <input type="text" id="employer" name="employer" autocomplete="off"
+                   placeholder="e.g. Acme Ltd" required />
+            <span class="error" id="err-employer"></span>
+          </div>
+          <div class="field">
+            <label for="jobTitle">Most Recent Job Title <span class="req" aria-hidden="true">*</span></label>
+            <input type="text" id="jobTitle" name="jobTitle" autocomplete="off"
+                   placeholder="e.g. Software Engineer" required />
+            <span class="error" id="err-jobTitle"></span>
+          </div>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="salary">Salary at Previous Job <span class="req" aria-hidden="true">*</span></label>
+            <input type="text" id="salary" name="salary" autocomplete="off"
+                   placeholder="e.g. £45,000" required />
+            <span class="error" id="err-salary"></span>
+          </div>
+          <div class="field">
+            <label for="duration">Employment Duration <span class="req" aria-hidden="true">*</span></label>
+            <input type="text" id="duration" name="duration" autocomplete="off"
+                   placeholder="e.g. 2 years 3 months" required />
+            <span class="error" id="err-duration"></span>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>CV Upload <span class="req" aria-hidden="true">*</span></label>
+          <div class="upload-zone" id="cv-zone" role="group" aria-describedby="cv-hint">
+            <div class="upload-icon" aria-hidden="true">📄</div>
+            <p class="upload-label">Drag &amp; drop your CV here, or click to select</p>
+            <p class="upload-sub" id="cv-hint">Accepted formats: PDF, DOCX · Max 5 MB</p>
+            <input type="file" id="cvFile" name="cvFile" accept=".pdf,.doc,.docx"
+                   class="file-input" aria-label="Select CV file" />
+            <p class="upload-selected" id="cv-selected" aria-live="polite"></p>
+          </div>
+          <span class="error" id="err-cvFile"></span>
+        </div>
+      </section>
+
+      <!-- ── Section 4: Identity Document ─────────────────────────── -->
+      <section class="form-section">
+        <h2 class="section-heading">4 · Identity Document</h2>
+
+        <div class="field">
+          <label for="docType">Document Type <span class="req" aria-hidden="true">*</span></label>
+          <select id="docType" name="docType" required>
+            <option value="">— Select document type —</option>
+            <option value="passport">Passport</option>
+            <option value="driving_licence">UK Driving Licence</option>
+            <option value="national_id">National ID Card (Buletin / ID Card)</option>
+          </select>
+          <span class="error" id="err-docType"></span>
+        </div>
+
+        <div class="field">
+          <label>Document File <span class="req" aria-hidden="true">*</span></label>
+          <div class="upload-zone" id="doc-zone" role="group" aria-describedby="doc-hint">
+            <div class="upload-icon" aria-hidden="true">🪪</div>
+            <p class="upload-label">Select a document file</p>
+            <p class="upload-sub" id="doc-hint">Accepted: PDF, PNG, JPG · Max 5 MB</p>
+            <input type="file" id="docFile" name="docFile" accept=".pdf,.png,.jpg,.jpeg"
+                   class="file-input" aria-label="Select identity document" />
+            <p class="upload-selected" id="doc-selected" aria-live="polite"></p>
+          </div>
+          <span class="error" id="err-docFile"></span>
+        </div>
+      </section>
+
+      <p id="server-error" class="server-error" aria-live="polite"></p>
+      <button type="submit" class="btn-next">Next →</button>
+    </form>
+  </main>
+
+  <footer>
+    <p>Employment Verification Service</p>
+  </footer>
+
+  <script src="form.js"></script>
+</body>
+</html>

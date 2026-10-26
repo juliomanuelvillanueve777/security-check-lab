@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: security-check-lab
+    runtime: python
+    buildCommand: ""
+    startCommand: python serve.py
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
