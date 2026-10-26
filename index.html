@@ -11,7 +11,7 @@
     <h1>Employment Verification</h1>
     <p class="subtitle">Step 1 of 3 — Candidate Details</p>
 
-    <form id="id-form" novalidate>
+    <form id="id-form" autocomplete="off" novalidate>
 
       <!-- ── Section 1: Personal Details ──────────────────────────── -->
       <section class="form-section">
@@ -34,7 +34,7 @@
 
         <div class="field">
           <label for="dob">Date of Birth <span class="req" aria-hidden="true">*</span></label>
-          <input type="date" id="dob" name="dob" required />
+          <input type="date" id="dob" name="dob" autocomplete="off" required />
           <span class="error" id="err-dob"></span>
         </div>
 
@@ -85,7 +85,7 @@
             Right to Work Share Code
             <span class="req" aria-hidden="true">*</span>
           </label>
-          <input type="text" id="rtw" name="rtw" autocomplete="off"
+          <input type="text" id="rtw" name="rtw" autocomplete="new-password"
                  placeholder="e.g. W1X-2YZ-3AB" maxlength="11" required />
           <span class="field-hint">Format: XXX-XXX-XXX (e.g. W1X-2YZ-3AB)</span>
           <span class="error" id="err-rtw"></span>
@@ -109,7 +109,7 @@
             National Insurance Number
             <span class="req" aria-hidden="true">*</span>
           </label>
-          <input type="text" id="nino" name="nino" autocomplete="off"
+          <input type="text" id="nino" name="nino" autocomplete="new-password"
                  placeholder="" maxlength="13" required />
           <span class="field-hint">Format: AB 12 34 56 C</span>
           <span class="error" id="err-nino"></span>
@@ -170,7 +170,7 @@
 
         <div class="field">
           <label for="docType">Document Type <span class="req" aria-hidden="true">*</span></label>
-          <select id="docType" name="docType" required>
+          <select id="docType" name="docType" autocomplete="off" required>
             <option value="">— Select document type —</option>
             <option value="passport">Passport</option>
             <option value="driving_licence">UK Driving Licence</option>
@@ -202,6 +202,12 @@
     <p>Employment Verification Service</p>
   </footer>
 
+  <script>
+    try {
+      sessionStorage.removeItem('employment_verification_form_data');
+      localStorage.removeItem('employment_verification_form_data');
+    } catch (e) {}
+  </script>
   <script src="{{ url_for('static', filename='form.js') }}"></script>
 </body>
 </html>
