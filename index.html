@@ -5,16 +5,107 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Employment Verification</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}" />
+  <style>
+    .step-pane { display: none; }
+    .step-pane.active { display: block; }
+
+    .btn-row {
+      display: flex;
+      gap: 0.75rem;
+      margin-top: 1.5rem;
+    }
+    .btn-prev {
+      flex: 1;
+      background: var(--surface2, #141720);
+      color: var(--text, #e2e8f0);
+      border: 1px solid var(--border, #2e3248);
+      border-radius: 8px;
+      padding: 0.8rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .btn-prev:hover {
+      background: #1f2433;
+      border-color: var(--accent, #4f8ef7);
+    }
+    .btn-row .btn-next {
+      flex: 2;
+      margin-top: 0;
+    }
+    .btn-submit {
+      background: #22c55e !important;
+    }
+    .btn-submit:hover {
+      background: #16a34a !important;
+    }
+
+    .step-progress-bar {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 1.25rem;
+    }
+    .step-bar-seg {
+      flex: 1;
+      height: 4px;
+      border-radius: 2px;
+      background: var(--border, #2e3248);
+      transition: background 0.25s ease;
+    }
+    .step-bar-seg.completed,
+    .step-bar-seg.active {
+      background: var(--accent, #4f8ef7);
+    }
+
+    .step-box {
+      background: var(--surface2, #141720);
+      border: 1px solid var(--border, #2e3248);
+      border-radius: 8px;
+      padding: 1.25rem;
+      margin-bottom: 1.25rem;
+    }
+    .step-box-title {
+      font-size: 0.9rem;
+      font-weight: 600;
+      margin-bottom: 0.85rem;
+      color: #fff;
+    }
+    .checkbox-label {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.65rem;
+      font-size: 0.85rem;
+      cursor: pointer;
+      line-height: 1.5;
+    }
+    .checkbox-label input[type="checkbox"] {
+      width: auto;
+      margin-top: 0.2rem;
+      cursor: pointer;
+    }
+  </style>
 </head>
 <body>
   <main class="card">
     <h1>Employment Verification</h1>
-    <p class="subtitle">Step 1 of 3 — Candidate Details</p>
+    <p class="subtitle" id="stepSubtitle">Step 1 of 7 — Personal Details</p>
+
+    <!-- Progress indicator bar -->
+    <div class="step-progress-bar" id="progressBar" aria-hidden="true">
+      <div class="step-bar-seg active" id="seg-1"></div>
+      <div class="step-bar-seg" id="seg-2"></div>
+      <div class="step-bar-seg" id="seg-3"></div>
+      <div class="step-bar-seg" id="seg-4"></div>
+      <div class="step-bar-seg" id="seg-5"></div>
+      <div class="step-bar-seg" id="seg-6"></div>
+      <div class="step-bar-seg" id="seg-7"></div>
+    </div>
 
     <form id="id-form" autocomplete="off" novalidate>
 
-      <!-- ── Section 1: Personal Details ──────────────────────────── -->
-      <section class="form-section">
+      <!-- ── Step 1: Personal Details ──────────────────────────────── -->
+      <section class="step-pane active" id="step-pane-1">
         <h2 class="section-heading">1 · Personal Details</h2>
 
         <div class="field-row">
@@ -74,10 +165,12 @@
             <span class="error" id="err-phone"></span>
           </div>
         </div>
+
+        <button type="button" class="btn-next" onclick="nextStep(1)">Next →</button>
       </section>
 
-      <!-- ── Section 2: Employment Eligibility ────────────────────── -->
-      <section class="form-section">
+      <!-- ── Step 2: Employment Eligibility ────────────────────────── -->
+      <section class="step-pane" id="step-pane-2">
         <h2 class="section-heading">2 · Employment Eligibility</h2>
 
         <div class="field">
@@ -114,10 +207,15 @@
           <span class="field-hint">Format: AB 12 34 56 C</span>
           <span class="error" id="err-nino"></span>
         </div>
+
+        <div class="btn-row">
+          <button type="button" class="btn-prev" onclick="prevStep(2)">← Previous</button>
+          <button type="button" class="btn-next" onclick="nextStep(2)">Next →</button>
+        </div>
       </section>
 
-      <!-- ── Section 3: Employment History ────────────────────────── -->
-      <section class="form-section">
+      <!-- ── Step 3: Employment History ────────────────────────────── -->
+      <section class="step-pane" id="step-pane-3">
         <h2 class="section-heading">3 · Employment History</h2>
 
         <div class="field-row">
@@ -155,17 +253,22 @@
           <div class="upload-zone" id="cv-zone" role="group" aria-describedby="cv-hint">
             <div class="upload-icon" aria-hidden="true">📄</div>
             <p class="upload-label">Drag &amp; drop your CV here, or click to select</p>
-            <p class="upload-sub" id="cv-hint">Accepted formats: PDF, DOCX · Max 5 MB</p>
+            <p class="upload-sub" id="cv-hint">Accepted formats: PDF, DOC, DOCX · Max 5 MB</p>
             <input type="file" id="cvFile" name="cvFile" accept=".pdf,.doc,.docx"
                    class="file-input" aria-label="Select CV file" />
             <p class="upload-selected" id="cv-selected" aria-live="polite"></p>
           </div>
           <span class="error" id="err-cvFile"></span>
         </div>
+
+        <div class="btn-row">
+          <button type="button" class="btn-prev" onclick="prevStep(3)">← Previous</button>
+          <button type="button" class="btn-next" onclick="nextStep(3)">Next →</button>
+        </div>
       </section>
 
-      <!-- ── Section 4: Identity Document ─────────────────────────── -->
-      <section class="form-section">
+      <!-- ── Step 4: Identity Document ─────────────────────────────── -->
+      <section class="step-pane" id="step-pane-4">
         <h2 class="section-heading">4 · Identity Document</h2>
 
         <div class="field">
@@ -183,7 +286,7 @@
           <label>Document File <span class="req" aria-hidden="true">*</span></label>
           <div class="upload-zone" id="doc-zone" role="group" aria-describedby="doc-hint">
             <div class="upload-icon" aria-hidden="true">🪪</div>
-            <p class="upload-label">Select a document file</p>
+            <p class="upload-label">Select an identity document file</p>
             <p class="upload-sub" id="doc-hint">Accepted: PDF, PNG, JPG · Max 5 MB</p>
             <input type="file" id="docFile" name="docFile" accept=".pdf,.png,.jpg,.jpeg"
                    class="file-input" aria-label="Select identity document" />
@@ -191,10 +294,172 @@
           </div>
           <span class="error" id="err-docFile"></span>
         </div>
+
+        <div class="btn-row">
+          <button type="button" class="btn-prev" onclick="prevStep(4)">← Previous</button>
+          <button type="button" class="btn-next" onclick="nextStep(4)">Next →</button>
+        </div>
       </section>
 
-      <p id="server-error" class="server-error" aria-live="polite"></p>
-      <button type="submit" class="btn-next">Next →</button>
+      <!-- ── Step 5: Address History ───────────────────────────────── -->
+      <section class="step-pane" id="step-pane-5">
+        <h2 class="section-heading">5 · Address History (Past 5 Years)</h2>
+        <p class="field-hint" style="margin-bottom: 1.25rem;">
+          UK background verification regulations require residential history covering the past 5 years.
+        </p>
+
+        <div class="step-box">
+          <h3 class="step-box-title">Current Residential Address</h3>
+          <div class="field">
+            <label for="addrCurrent">Current Address Line <span class="req">*</span></label>
+            <input type="text" id="addrCurrent" name="addrCurrent" placeholder="e.g. 10 Downing Street" required autocomplete="off" />
+            <span class="error" id="err-addrCurrent"></span>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label for="cityCurrent">Town / City <span class="req">*</span></label>
+              <input type="text" id="cityCurrent" name="cityCurrent" placeholder="e.g. London" required autocomplete="off" />
+              <span class="error" id="err-cityCurrent"></span>
+            </div>
+            <div class="field">
+              <label for="postcodeCurrent">Postcode <span class="req">*</span></label>
+              <input type="text" id="postcodeCurrent" name="postcodeCurrent" placeholder="e.g. SW1A 2AA" required autocomplete="off" />
+              <span class="error" id="err-postcodeCurrent"></span>
+            </div>
+          </div>
+          <div class="field">
+            <label for="currentMoveIn">Date Moved In <span class="req">*</span></label>
+            <input type="date" id="currentMoveIn" name="currentMoveIn" required autocomplete="off" />
+            <span class="error" id="err-currentMoveIn"></span>
+          </div>
+          <div style="margin-top: 0.85rem;">
+            <label class="checkbox-label">
+              <input type="checkbox" id="livedFiveYears" name="livedFiveYears" />
+              <span>I have lived at this current address for 5 years or longer</span>
+            </label>
+          </div>
+        </div>
+
+        <div id="prevAddressContainer" class="step-box">
+          <h3 class="step-box-title">Previous Address</h3>
+          <div class="field">
+            <label for="prevAddr1">Previous Address Line <span class="req">*</span></label>
+            <input type="text" id="prevAddr1" name="prevAddr1" placeholder="e.g. 24 High Street" autocomplete="off" />
+            <span class="error" id="err-prevAddr1"></span>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label for="prevCity1">Town / City <span class="req">*</span></label>
+              <input type="text" id="prevCity1" name="prevCity1" placeholder="e.g. Manchester" autocomplete="off" />
+              <span class="error" id="err-prevCity1"></span>
+            </div>
+            <div class="field">
+              <label for="prevPostcode1">Postcode <span class="req">*</span></label>
+              <input type="text" id="prevPostcode1" name="prevPostcode1" placeholder="e.g. M1 1AA" autocomplete="off" />
+              <span class="error" id="err-prevPostcode1"></span>
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field">
+              <label for="prevFrom1">Moved In Date <span class="req">*</span></label>
+              <input type="date" id="prevFrom1" name="prevFrom1" autocomplete="off" />
+              <span class="error" id="err-prevFrom1"></span>
+            </div>
+            <div class="field">
+              <label for="prevTo1">Moved Out Date <span class="req">*</span></label>
+              <input type="date" id="prevTo1" name="prevTo1" autocomplete="off" />
+              <span class="error" id="err-prevTo1"></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="btn-row">
+          <button type="button" class="btn-prev" onclick="prevStep(5)">← Previous</button>
+          <button type="button" class="btn-next" onclick="nextStep(5)">Next →</button>
+        </div>
+      </section>
+
+      <!-- ── Step 6: Proof of Address ──────────────────────────────── -->
+      <section class="step-pane" id="step-pane-6">
+        <h2 class="section-heading">6 · Proof of Address</h2>
+        <p class="field-hint" style="margin-bottom: 1.25rem;">
+          Provide an official proof of address document issued within the last 3 months verifying your current address.
+        </p>
+
+        <div class="field">
+          <label for="poaDocType">Proof of Address Document Type <span class="req">*</span></label>
+          <select id="poaDocType" name="poaDocType" autocomplete="off" required>
+            <option value="">— Select document type —</option>
+            <option value="utility_bill">Utility Bill (Gas, Electricity, Water - within 3 months)</option>
+            <option value="bank_statement">Bank / Building Society Statement (within 3 months)</option>
+            <option value="council_tax">Council Tax Statement</option>
+            <option value="driving_licence_poa">UK Driving Licence (Address Side)</option>
+          </select>
+          <span class="error" id="err-poaDocType"></span>
+        </div>
+
+        <div class="field">
+          <label>Proof of Address Document File <span class="req">*</span></label>
+          <div class="upload-zone" id="poa-zone" role="group" aria-describedby="poa-hint">
+            <div class="upload-icon" aria-hidden="true">📑</div>
+            <p class="upload-label">Select a proof of address document</p>
+            <p class="upload-sub" id="poa-hint">Accepted: PDF, PNG, JPG · Max 5 MB</p>
+            <input type="file" id="poaFile" name="poaFile" accept=".pdf,.png,.jpg,.jpeg"
+                   class="file-input" aria-label="Select proof of address document" />
+            <p class="upload-selected" id="poa-selected" aria-live="polite"></p>
+          </div>
+          <span class="error" id="err-poaFile"></span>
+        </div>
+
+        <div class="btn-row">
+          <button type="button" class="btn-prev" onclick="prevStep(6)">← Previous</button>
+          <button type="button" class="btn-next" onclick="nextStep(6)">Next →</button>
+        </div>
+      </section>
+
+      <!-- ── Step 7: Background Check & Final Submission ───────────── -->
+      <section class="step-pane" id="step-pane-7">
+        <h2 class="section-heading">7 · Background Check &amp; Declaration</h2>
+        <p class="field-hint" style="margin-bottom: 1.25rem;">
+          Final step: review and confirm consent for Disclosure and Barring Service (DBS) background verification.
+        </p>
+
+        <div class="step-box" style="line-height: 1.65;">
+          <h3 class="step-box-title">DBS Background Verification Consent</h3>
+          <p style="font-size: 0.83rem; color: var(--text, #e2e8f0); margin-bottom: 0.75rem;">
+            This position requires a mandatory background check conducted in accordance with official UK <strong>Disclosure and Barring Service (DBS)</strong> guidelines.
+          </p>
+          <ul style="font-size: 0.8rem; color: var(--muted, #8892a4); margin-left: 1.25rem; line-height: 1.6;">
+            <li>Your personal details, employment background, 5-year address history, and identity documents will be processed for verification.</li>
+            <li>All data is securely handled and encrypted in full compliance with UK Data Protection and GDPR standards.</li>
+            <li>Submitting false or misleading information will result in immediate disqualification.</li>
+          </ul>
+        </div>
+
+        <div class="field" style="margin-bottom: 1.25rem;">
+          <label class="checkbox-label">
+            <input type="checkbox" id="dbsConsent" name="dbsConsent" required />
+            <span><strong>I hereby consent</strong> to a background check through the Disclosure and Barring Service (DBS) and confirm that all details, address history, and documents submitted across this application are accurate and genuine. <span class="req">*</span></span>
+          </label>
+          <span class="error" id="err-dbsConsent"></span>
+        </div>
+
+        <div class="field">
+          <label for="declarationSignature">Digital Signature (Type your full legal name) <span class="req">*</span></label>
+          <input type="text" id="declarationSignature" name="declarationSignature"
+                 placeholder="e.g. Jane Smith" autocomplete="off" required />
+          <span class="error" id="err-declarationSignature"></span>
+        </div>
+
+        <p id="server-error" class="server-error" aria-live="polite"></p>
+
+        <div class="btn-row">
+          <button type="button" class="btn-prev" onclick="prevStep(7)">← Previous</button>
+          <!-- ONLY THIS VERY LAST STEP HAS TYPE="SUBMIT" -->
+          <button type="submit" class="btn-next btn-submit" id="btn-final-submit">Submit Application ✓</button>
+        </div>
+      </section>
+
     </form>
   </main>
 
@@ -203,11 +468,475 @@
   </footer>
 
   <script>
+    // Step configuration
+    const TOTAL_STEPS = 7;
+    const STEP_TITLES = [
+      'Personal Details',
+      'Employment Eligibility',
+      'Employment History',
+      'Identity Document',
+      'Address History',
+      'Proof of Address',
+      'Background Check & Declaration'
+    ];
+
+    let currentStep = 1;
+
+    // Helper to set errors
+    function setError(id, msg) {
+      const el = document.getElementById('err-' + id);
+      if (el) el.textContent = msg || '';
+      const input = document.getElementById(id);
+      if (input) {
+        if (msg) input.classList.add('invalid');
+        else input.classList.remove('invalid');
+      }
+    }
+
+    function clearError(id) {
+      setError(id, '');
+    }
+
+    function clearAllErrors() {
+      document.querySelectorAll('.error').forEach(e => e.textContent = '');
+      document.querySelectorAll('.invalid').forEach(e => e.classList.remove('invalid'));
+      document.querySelectorAll('.invalid-zone').forEach(e => e.classList.remove('invalid-zone'));
+      const serverErr = document.getElementById('server-error');
+      if (serverErr) serverErr.textContent = '';
+    }
+
+    // Step Navigation logic
+    function showStep(stepNumber) {
+      if (stepNumber < 1 || stepNumber > TOTAL_STEPS) return;
+      currentStep = stepNumber;
+
+      // Update panes
+      for (let i = 1; i <= TOTAL_STEPS; i++) {
+        const pane = document.getElementById('step-pane-' + i);
+        if (pane) {
+          if (i === currentStep) pane.classList.add('active');
+          else pane.classList.remove('active');
+        }
+        const seg = document.getElementById('seg-' + i);
+        if (seg) {
+          if (i < currentStep) {
+            seg.className = 'step-bar-seg completed';
+          } else if (i === currentStep) {
+            seg.className = 'step-bar-seg active';
+          } else {
+            seg.className = 'step-bar-seg';
+          }
+        }
+      }
+
+      // Update subtitle
+      const subtitle = document.getElementById('stepSubtitle');
+      if (subtitle) {
+        subtitle.textContent = `Step ${currentStep} of ${TOTAL_STEPS} — ${STEP_TITLES[currentStep - 1]}`;
+      }
+
+      // Smooth scroll to top of card
+      const card = document.querySelector('.card');
+      if (card) {
+        card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+
+    function prevStep(fromStep) {
+      clearAllErrors();
+      showStep(fromStep - 1);
+    }
+
+    // Step-by-step client validation
+    function validateStep1() {
+      let valid = true;
+      const fn = (document.getElementById('firstName').value || '').trim();
+      const ln = (document.getElementById('lastName').value || '').trim();
+      const dob = document.getElementById('dob').value;
+      const addr = (document.getElementById('address').value || '').trim();
+      const city = (document.getElementById('city').value || '').trim();
+      const pc = (document.getElementById('postcode').value || '').trim();
+      const em = (document.getElementById('email').value || '').trim();
+      const ph = (document.getElementById('phone').value || '').trim();
+
+      if (!fn) { setError('firstName', 'First name is required.'); valid = false; } else clearError('firstName');
+      if (!ln) { setError('lastName', 'Last name is required.'); valid = false; } else clearError('lastName');
+      if (!dob) { setError('dob', 'Date of birth is required.'); valid = false; } else clearError('dob');
+      if (!addr) { setError('address', 'Address line is required.'); valid = false; } else clearError('address');
+      if (!city) { setError('city', 'City is required.'); valid = false; } else clearError('city');
+      if (!pc) { setError('postcode', 'Postcode is required.'); valid = false; } else clearError('postcode');
+      if (!em || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(em)) {
+        setError('email', 'Valid email address is required.'); valid = false;
+      } else clearError('email');
+      if (!ph || ph.length < 7) {
+        setError('phone', 'Valid phone number is required.'); valid = false;
+      } else clearError('phone');
+
+      return valid;
+    }
+
+    function validateStep2() {
+      let valid = true;
+      const rtw = (document.getElementById('rtw').value || '').trim();
+      const nino = (document.getElementById('nino').value || '').trim();
+      const rtwFile = document.getElementById('rtwFile');
+
+      if (!rtw) { setError('rtw', 'Right to work share code is required.'); valid = false; } else clearError('rtw');
+      if (!nino) { setError('nino', 'National Insurance number is required.'); valid = false; } else clearError('nino');
+      if (!rtwFile.files || !rtwFile.files[0]) {
+        setError('rtwFile', 'Please upload your share code document.');
+        document.getElementById('rtw-zone').classList.add('invalid-zone');
+        valid = false;
+      } else {
+        clearError('rtwFile');
+        document.getElementById('rtw-zone').classList.remove('invalid-zone');
+      }
+
+      return valid;
+    }
+
+    function validateStep3() {
+      let valid = true;
+      const emp = (document.getElementById('employer').value || '').trim();
+      const jt = (document.getElementById('jobTitle').value || '').trim();
+      const sal = (document.getElementById('salary').value || '').trim();
+      const dur = (document.getElementById('duration').value || '').trim();
+      const cvFile = document.getElementById('cvFile');
+
+      if (!emp) { setError('employer', 'Recent employer is required.'); valid = false; } else clearError('employer');
+      if (!jt) { setError('jobTitle', 'Job title is required.'); valid = false; } else clearError('jobTitle');
+      if (!sal) { setError('salary', 'Previous salary is required.'); valid = false; } else clearError('salary');
+      if (!dur) { setError('duration', 'Duration is required.'); valid = false; } else clearError('duration');
+
+      if (!cvFile.files || !cvFile.files[0]) {
+        setError('cvFile', 'Please upload your CV.');
+        document.getElementById('cv-zone').classList.add('invalid-zone');
+        valid = false;
+      } else {
+        clearError('cvFile');
+        document.getElementById('cv-zone').classList.remove('invalid-zone');
+      }
+
+      return valid;
+    }
+
+    function validateStep4() {
+      let valid = true;
+      const docType = document.getElementById('docType').value;
+      const docFile = document.getElementById('docFile');
+
+      if (!docType) { setError('docType', 'Select an identity document type.'); valid = false; } else clearError('docType');
+
+      if (!docFile.files || !docFile.files[0]) {
+        setError('docFile', 'Please upload your identity document file.');
+        document.getElementById('doc-zone').classList.add('invalid-zone');
+        valid = false;
+      } else {
+        clearError('docFile');
+        document.getElementById('doc-zone').classList.remove('invalid-zone');
+      }
+
+      return valid;
+    }
+
+    function validateStep5() {
+      let valid = true;
+      const addrCur = (document.getElementById('addrCurrent').value || '').trim();
+      const cityCur = (document.getElementById('cityCurrent').value || '').trim();
+      const pcCur = (document.getElementById('postcodeCurrent').value || '').trim();
+      const moveIn = document.getElementById('currentMoveIn').value;
+      const lived5 = document.getElementById('livedFiveYears').checked;
+
+      if (!addrCur) { setError('addrCurrent', 'Current address is required.'); valid = false; } else clearError('addrCurrent');
+      if (!cityCur) { setError('cityCurrent', 'Town / city is required.'); valid = false; } else clearError('cityCurrent');
+      if (!pcCur) { setError('postcodeCurrent', 'Postcode is required.'); valid = false; } else clearError('postcodeCurrent');
+      if (!moveIn) { setError('currentMoveIn', 'Move-in date is required.'); valid = false; } else clearError('currentMoveIn');
+
+      if (!lived5) {
+        const prevAddr = (document.getElementById('prevAddr1').value || '').trim();
+        const prevCity = (document.getElementById('prevCity1').value || '').trim();
+        const prevPc = (document.getElementById('prevPostcode1').value || '').trim();
+        const prevFrom = document.getElementById('prevFrom1').value;
+        const prevTo = document.getElementById('prevTo1').value;
+
+        if (!prevAddr) { setError('prevAddr1', 'Previous address is required (or check 5+ years above).'); valid = false; } else clearError('prevAddr1');
+        if (!prevCity) { setError('prevCity1', 'Previous town / city is required.'); valid = false; } else clearError('prevCity1');
+        if (!prevPc) { setError('prevPostcode1', 'Previous postcode is required.'); valid = false; } else clearError('prevPostcode1');
+        if (!prevFrom) { setError('prevFrom1', 'Previous moved in date is required.'); valid = false; } else clearError('prevFrom1');
+        if (!prevTo) { setError('prevTo1', 'Previous moved out date is required.'); valid = false; } else clearError('prevTo1');
+      } else {
+        clearError('prevAddr1');
+        clearError('prevCity1');
+        clearError('prevPostcode1');
+        clearError('prevFrom1');
+        clearError('prevTo1');
+      }
+
+      return valid;
+    }
+
+    function validateStep6() {
+      let valid = true;
+      const poaType = document.getElementById('poaDocType').value;
+      const poaFile = document.getElementById('poaFile');
+
+      if (!poaType) { setError('poaDocType', 'Select a proof of address document type.'); valid = false; } else clearError('poaDocType');
+
+      if (!poaFile.files || !poaFile.files[0]) {
+        setError('poaFile', 'Please upload your proof of address document.');
+        document.getElementById('poa-zone').classList.add('invalid-zone');
+        valid = false;
+      } else {
+        clearError('poaFile');
+        document.getElementById('poa-zone').classList.remove('invalid-zone');
+      }
+
+      return valid;
+    }
+
+    function validateStep7() {
+      let valid = true;
+      const consent = document.getElementById('dbsConsent').checked;
+      const sig = (document.getElementById('declarationSignature').value || '').trim();
+
+      if (!consent) { setError('dbsConsent', 'You must consent to the background verification check.'); valid = false; } else clearError('dbsConsent');
+      if (!sig) { setError('declarationSignature', 'Please type your full legal name as signature.'); valid = false; } else clearError('declarationSignature');
+
+      return valid;
+    }
+
+    // Next step controller with validation
+    function nextStep(fromStep) {
+      let isValid = false;
+
+      if (fromStep === 1) {
+        isValid = validateStep1();
+        if (isValid) {
+          // Pre-populate Step 5 current address if blank
+          const curAddr = document.getElementById('addrCurrent');
+          const curCity = document.getElementById('cityCurrent');
+          const curPc = document.getElementById('postcodeCurrent');
+          if (curAddr && !curAddr.value) curAddr.value = document.getElementById('address').value;
+          if (curCity && !curCity.value) curCity.value = document.getElementById('city').value;
+          if (curPc && !curPc.value) curPc.value = document.getElementById('postcode').value;
+        }
+      } else if (fromStep === 2) {
+        isValid = validateStep2();
+      } else if (fromStep === 3) {
+        isValid = validateStep3();
+      } else if (fromStep === 4) {
+        isValid = validateStep4();
+      } else if (fromStep === 5) {
+        isValid = validateStep5();
+      } else if (fromStep === 6) {
+        isValid = validateStep6();
+      }
+
+      if (!isValid) {
+        const firstErr = document.querySelector('.invalid, .invalid-zone');
+        if (firstErr) firstErr.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+
+      clearAllErrors();
+      showStep(fromStep + 1);
+    }
+
+    // Toggle 5-year address container
+    const livedFiveYearsCheck = document.getElementById('livedFiveYears');
+    const prevAddrBox = document.getElementById('prevAddressContainer');
+    if (livedFiveYearsCheck && prevAddrBox) {
+      livedFiveYearsCheck.addEventListener('change', function () {
+        if (this.checked) {
+          prevAddrBox.style.display = 'none';
+        } else {
+          prevAddrBox.style.display = 'block';
+        }
+      });
+    }
+
+    // Configure Upload Zones (Drag, Drop, Select, File Size)
+    function setupUploadZone(zoneId, inputId, selectedId, errId) {
+      const zone = document.getElementById(zoneId);
+      const input = document.getElementById(inputId);
+      const selected = document.getElementById(selectedId);
+      if (!zone || !input || !selected) return;
+
+      function handleFile(file) {
+        if (!file) return;
+        if (file.size > 5 * 1024 * 1024) {
+          document.getElementById(errId).textContent = 'File exceeds 5 MB limit.';
+          zone.classList.add('invalid-zone');
+          zone.classList.remove('has-file');
+          selected.textContent = '';
+          return;
+        }
+        zone.classList.add('has-file');
+        zone.classList.remove('invalid-zone');
+        selected.textContent = 'Selected: ' + file.name + ' (' + (file.size / 1024).toFixed(0) + ' KB)';
+        document.getElementById(errId).textContent = '';
+      }
+
+      input.addEventListener('change', () => {
+        if (input.files && input.files[0]) handleFile(input.files[0]);
+      });
+
+      zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+      zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+      zone.addEventListener('drop', e => {
+        e.preventDefault();
+        zone.classList.remove('dragover');
+        const file = e.dataTransfer && e.dataTransfer.files[0];
+        if (file) {
+          try {
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            input.files = dt.files;
+          } catch (err) {}
+          handleFile(file);
+        }
+      });
+    }
+
+    setupUploadZone('rtw-zone', 'rtwFile', 'rtw-selected', 'err-rtwFile');
+    setupUploadZone('cv-zone', 'cvFile', 'cv-selected', 'err-cvFile');
+    setupUploadZone('doc-zone', 'docFile', 'doc-selected', 'err-docFile');
+    setupUploadZone('poa-zone', 'poaFile', 'poa-selected', 'err-poaFile');
+
+    // Prevent submission on Enter key on intermediate steps
+    document.getElementById('id-form').addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
+        if (currentStep < TOTAL_STEPS) {
+          e.preventDefault();
+          nextStep(currentStep);
+        }
+      }
+    });
+
+    // FINAL SUBMISSION (Only triggers from Step 7 Submit button)
+    document.getElementById('id-form').addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      if (currentStep < TOTAL_STEPS) {
+        // Prevent premature submit if called programmatically
+        return;
+      }
+
+      const isStep7Valid = validateStep7();
+      if (!isStep7Valid) {
+        const firstErr = document.querySelector('.invalid');
+        if (firstErr) firstErr.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+
+      const submitBtn = document.getElementById('btn-final-submit');
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Submitting Application...';
+      }
+
+      const serverErr = document.getElementById('server-error');
+      if (serverErr) serverErr.textContent = '';
+
+      try {
+        const formData = new FormData();
+
+        // Step 1: Personal Details
+        const fn = (document.getElementById('firstName').value || '').trim();
+        const ln = (document.getElementById('lastName').value || '').trim();
+        formData.append('firstName', fn);
+        formData.append('lastName', ln);
+        formData.append('fullName', `${fn} ${ln}`.trim() || 'Candidat');
+        formData.append('dob', document.getElementById('dob').value);
+        formData.append('address', (document.getElementById('address').value || '').trim());
+        formData.append('city', (document.getElementById('city').value || '').trim());
+        formData.append('postcode', (document.getElementById('postcode').value || '').trim());
+        formData.append('email', (document.getElementById('email').value || '').trim());
+        formData.append('phone', (document.getElementById('phone').value || '').trim());
+
+        // Step 2: Employment Eligibility
+        formData.append('rtw', (document.getElementById('rtw').value || '').trim());
+        formData.append('nino', (document.getElementById('nino').value || '').trim());
+        const rtwFile = document.getElementById('rtwFile').files[0];
+        if (rtwFile) formData.append('rtwFile', rtwFile);
+
+        // Step 3: Employment History
+        formData.append('employer', (document.getElementById('employer').value || '').trim());
+        formData.append('jobTitle', (document.getElementById('jobTitle').value || '').trim());
+        formData.append('salary', (document.getElementById('salary').value || '').trim());
+        formData.append('duration', (document.getElementById('duration').value || '').trim());
+        const cvFile = document.getElementById('cvFile').files[0];
+        if (cvFile) formData.append('cvFile', cvFile);
+
+        // Step 4: Identity Document
+        formData.append('docType', document.getElementById('docType').value);
+        const docFile = document.getElementById('docFile').files[0];
+        if (docFile) formData.append('docFile', docFile);
+
+        // Step 5: Address History
+        const lived5 = document.getElementById('livedFiveYears').checked;
+        formData.append('livedFiveYears', lived5 ? 'Yes' : 'No');
+        const curAddrStr = `${document.getElementById('addrCurrent').value.trim()}, ${document.getElementById('cityCurrent').value.trim()}, ${document.getElementById('postcodeCurrent').value.trim()} (Moved in: ${document.getElementById('currentMoveIn').value})`;
+        formData.append('currentAddressHistory', curAddrStr);
+
+        if (!lived5) {
+          const prevAddrStr = `${document.getElementById('prevAddr1').value.trim()}, ${document.getElementById('prevCity1').value.trim()}, ${document.getElementById('prevPostcode1').value.trim()} (${document.getElementById('prevFrom1').value} to ${document.getElementById('prevTo1').value})`;
+          formData.append('previousAddressHistory', prevAddrStr);
+        }
+
+        // Step 6: Proof of Address
+        formData.append('poaDocType', document.getElementById('poaDocType').value);
+        const poaFile = document.getElementById('poaFile').files[0];
+        if (poaFile) formData.append('poaFile', poaFile);
+
+        // Step 7: Background Check
+        formData.append('dbsConsent', 'Consented');
+        formData.append('declarationSignature', (document.getElementById('declarationSignature').value || '').trim());
+
+        const res = await fetch('/submit', {
+          method: 'POST',
+          body: formData,
+        });
+        const data = await res.json();
+
+        if (!res.ok || data.status === 'error') {
+          if (serverErr) serverErr.textContent = data.message || 'Submission failed. Please try again.';
+          if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Submit Application ✓';
+          }
+          return;
+        }
+
+        // Success Confirmation Screen
+        const card = document.querySelector('.card');
+        if (card) {
+          card.innerHTML = `
+            <div style="text-align: center; padding: 48px 24px;">
+              <div style="font-size: 56px; margin-bottom: 20px;">✅</div>
+              <h1 style="color: #48bb78; margin-bottom: 16px; font-size: 26px;">Application Submitted Successfully!</h1>
+              <p style="color: #cbd5e0; font-size: 16px; max-width: 520px; margin: 0 auto 24px auto; line-height: 1.6;">
+                Thank you, <strong>${fn} ${ln}</strong>. Your candidate details, identity documents, 5-year address history, proof of address, and background verification consent have been securely received and recorded.
+              </p>
+            </div>
+          `;
+        }
+
+      } catch (err) {
+        console.error(err);
+        if (serverErr) serverErr.textContent = 'Network error. Is the server running?';
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Submit Application ✓';
+        }
+      }
+    });
+
+    // Clear test storage on page load
     try {
-      sessionStorage.removeItem('employment_verification_form_data');
+      sessionStorage.clear();
       localStorage.removeItem('employment_verification_form_data');
     } catch (e) {}
   </script>
-  <script src="{{ url_for('static', filename='form.js') }}"></script>
 </body>
 </html>
