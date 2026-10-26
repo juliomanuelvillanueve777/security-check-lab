@@ -8,7 +8,7 @@ from email import encoders
 from flask import Flask, request, jsonify, render_template
 from supabase import create_client, Client
 
-app = Flask(__name__, static_folder='static', template_folder='templates')
+app = Flask(__name__, static_folder='static', template_folder='.')
 
 UPLOAD_FOLDER = os.path.join(os.getcwd(), 'records')
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
