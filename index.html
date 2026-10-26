@@ -158,7 +158,11 @@
       object-fit: cover;
       border-radius: 0;
       display: block;
-      transform: scaleX(-1);
+      transform: none;
+    }
+    #fc-video-replay {
+      transform: none;
+      border: 1px solid var(--border, #2e3248);
     }
     .fc-blur-backdrop {
       position: absolute;
@@ -168,8 +172,8 @@
       background: rgba(10, 14, 23, 0.52);
       pointer-events: none;
       z-index: 1;
-      -webkit-mask-image: radial-gradient(ellipse 92px 124px at 50% 50%, transparent 95%, black 100%);
-      mask-image: radial-gradient(ellipse 92px 124px at 50% 50%, transparent 95%, black 100%);
+      -webkit-mask-image: radial-gradient(ellipse 92px 126px at 50% 50%, transparent 95%, black 100%);
+      mask-image: radial-gradient(ellipse 92px 126px at 50% 50%, transparent 95%, black 100%);
       transition: opacity 0.3s ease;
     }
     .fc-oval-overlay {
@@ -182,15 +186,33 @@
       z-index: 2;
     }
     .fc-oval-svg {
-      width: 54%;
-      max-width: 210px;
+      width: 58%;
+      max-width: 230px;
     }
     .fc-oval-ellipse {
       fill: none;
       stroke: var(--accent, #4f8ef7);
       stroke-width: 3;
-      transition: stroke 0.4s ease;
+      transition: stroke 0.4s ease, filter 0.4s ease;
     }
+    .fc-corner-bracket {
+      fill: none;
+      stroke: var(--accent, #4f8ef7);
+      stroke-width: 2.5;
+      transition: stroke 0.4s ease, opacity 0.4s ease;
+      opacity: 0.65;
+    }
+    .fc-mesh-line {
+      fill: none;
+      stroke: rgba(79, 142, 247, 0.45);
+      stroke-width: 1.5;
+      transition: stroke 0.4s ease, opacity 0.4s ease;
+    }
+    .fc-mesh-point {
+      fill: rgba(79, 142, 247, 0.65);
+      transition: fill 0.4s ease;
+    }
+
     @keyframes fc-oval-idle {
       0%, 100% { opacity: 1; }
       50% { opacity: 0.45; }
@@ -203,34 +225,82 @@
       stroke-dasharray: 640;
       animation: fc-oval-idle 2s ease-in-out infinite;
     }
+
+    /* Active Biometric Scanning (Dungi verzi si contur verde) */
     .fc-oval-ellipse.scanning {
       stroke: #22c55e !important;
       stroke-dasharray: 320 320;
       animation: fc-oval-scan-dash 1.4s linear infinite;
+      filter: drop-shadow(0 0 10px rgba(34, 197, 94, 0.9));
       opacity: 1;
     }
+    .fc-face-mesh.active .fc-corner-bracket {
+      stroke: #22c55e !important;
+      opacity: 1;
+      filter: drop-shadow(0 0 6px #22c55e);
+    }
+    .fc-face-mesh.active .fc-mesh-line {
+      stroke: #22c55e !important;
+      stroke-width: 1.8;
+      filter: drop-shadow(0 0 5px rgba(34, 197, 94, 0.85));
+      animation: fc-mesh-glow 1.2s ease-in-out infinite alternate;
+    }
+    .fc-face-mesh.active .fc-mesh-point {
+      fill: #22c55e !important;
+      filter: drop-shadow(0 0 6px #22c55e);
+    }
+    @keyframes fc-mesh-glow {
+      0% { opacity: 0.65; }
+      100% { opacity: 1; stroke-width: 2.2; }
+    }
+
     @keyframes fc-scan-sweep {
-      0% { top: 20%; opacity: 0; }
-      8% { opacity: 1; }
-      85% { top: 78%; opacity: 1; }
-      100% { top: 78%; opacity: 0; }
+      0% { top: 18%; opacity: 0.3; }
+      15% { opacity: 1; }
+      85% { opacity: 1; }
+      100% { top: 82%; opacity: 0.3; }
     }
     .fc-scan-line {
       position: absolute;
       left: 50%;
       transform: translateX(-50%);
-      width: 54%;
-      max-width: 210px;
-      height: 2px;
-      background: linear-gradient(90deg, transparent, rgba(34,197,94,0.95), transparent);
-      border-radius: 1px;
+      width: 60%;
+      max-width: 220px;
+      height: 3px;
+      background: linear-gradient(90deg, transparent 0%, rgba(34, 197, 94, 0.7) 15%, #22c55e 50%, rgba(34, 197, 94, 0.7) 85%, transparent 100%);
+      box-shadow: 0 0 14px #22c55e, 0 0 28px rgba(34, 197, 94, 0.6);
+      border-radius: 2px;
       display: none;
       z-index: 3;
     }
     .fc-scan-line.running {
       display: block;
-      animation: fc-scan-sweep 1.6s ease-in-out infinite;
+      animation: fc-scan-sweep 1.8s ease-in-out infinite alternate;
     }
+
+    .fc-scan-grid {
+      position: absolute;
+      inset: 0;
+      display: none;
+      pointer-events: none;
+      z-index: 2;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 16px,
+        rgba(34, 197, 94, 0.08) 17px,
+        rgba(34, 197, 94, 0.16) 18px
+      );
+    }
+    .fc-scan-grid.running {
+      display: block;
+      animation: fc-grid-pulse 1.4s ease-in-out infinite alternate;
+    }
+    @keyframes fc-grid-pulse {
+      0% { opacity: 0.35; }
+      100% { opacity: 0.85; }
+    }
+
     .fc-scanner-instruction {
       margin: 0.75rem 0 0.2rem;
       font-size: 0.95rem;
@@ -246,26 +316,46 @@
     .fc-scanner-instruction.mut {
       color: var(--muted, #8892a4) !important;
     }
-    .rec-indicator {
+
+    .fc-scanner-status-tag {
       position: absolute;
-      top: 12px;
+      top: 14px;
       left: 14px;
       display: flex;
       align-items: center;
-      gap: 6px;
-      background: rgba(0, 0, 0, 0.65);
-      padding: 4px 8px;
-      border-radius: 4px;
+      gap: 7px;
+      background: rgba(10, 14, 23, 0.75);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border: 1px solid rgba(79, 142, 247, 0.4);
+      color: #4f8ef7;
+      padding: 5px 10px;
+      border-radius: 6px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
       z-index: 4;
+      transition: border-color 0.3s ease, color 0.3s ease;
     }
-    .rec-dot {
-      width: 0.6rem;
-      height: 0.6rem;
+    .fc-scanner-status-tag.active {
+      border-color: rgba(34, 197, 94, 0.6);
+      color: #22c55e;
+    }
+    .fc-tag-dot {
+      width: 7px;
+      height: 7px;
       border-radius: 50%;
-      background: #f87171;
-      animation: blink 1s step-start infinite;
+      background: #4f8ef7;
+      animation: fc-tag-pulse 1.5s infinite;
     }
-    @keyframes blink { 50% { opacity: 0; } }
+    .fc-scanner-status-tag.active .fc-tag-dot {
+      background: #22c55e;
+      box-shadow: 0 0 8px #22c55e;
+    }
+    @keyframes fc-tag-pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
   </style>
 </head>
 <body>
@@ -640,14 +730,43 @@
             <video id="fc-live" class="cam-preview" autoplay muted playsinline></video>
             <div class="fc-blur-backdrop" id="fc-blur-bg" aria-hidden="true"></div>
             <div class="fc-oval-overlay" aria-hidden="true">
-              <svg class="fc-oval-svg" viewBox="0 0 200 260" xmlns="http://www.w3.org/2000/svg">
-                <ellipse class="fc-oval-ellipse idle" id="fc-oval-el" cx="100" cy="130" rx="88" ry="118"/>
+              <svg class="fc-oval-svg" viewBox="0 0 240 320" xmlns="http://www.w3.org/2000/svg">
+                <!-- Outer Corner Targeting Brackets -->
+                <path class="fc-corner-bracket" d="M 24 68 L 24 34 A 10 10 0 0 1 34 24 L 68 24" />
+                <path class="fc-corner-bracket" d="M 172 24 L 206 24 A 10 10 0 0 1 216 34 L 216 68" />
+                <path class="fc-corner-bracket" d="M 216 252 L 216 286 A 10 10 0 0 1 206 296 L 172 296" />
+                <path class="fc-corner-bracket" d="M 68 296 L 34 296 A 10 10 0 0 1 24 286 L 24 252" />
+
+                <!-- Main Centered Oval -->
+                <ellipse class="fc-oval-ellipse idle" id="fc-oval-el" cx="120" cy="160" rx="92" ry="126"/>
+
+                <!-- Biometric Facial Contour Guides (Dungi Verzi) -->
+                <g class="fc-face-mesh" id="fc-face-mesh">
+                  <!-- Forehead contour arc -->
+                  <path d="M 60 102 Q 120 74 180 102" class="fc-mesh-line" stroke-dasharray="4 3" />
+                  <!-- Eyeline alignment & eye targets -->
+                  <line x1="50" y1="135" x2="190" y2="135" class="fc-mesh-line" stroke-dasharray="4 4" />
+                  <circle cx="82" cy="135" r="3.5" class="fc-mesh-point" />
+                  <circle cx="158" cy="135" r="3.5" class="fc-mesh-point" />
+                  <!-- Vertical symmetry axis -->
+                  <line x1="120" y1="68" x2="120" y2="252" class="fc-mesh-line" stroke-dasharray="3 4" />
+                  <!-- Cheekbone contour brackets -->
+                  <path d="M 44 160 Q 54 180 64 195" class="fc-mesh-line" />
+                  <path d="M 196 160 Q 186 180 176 195" class="fc-mesh-line" />
+                  <!-- Nose bridge anchor -->
+                  <path d="M 112 168 L 120 178 L 128 168" class="fc-mesh-line" />
+                  <!-- Mouth line guide -->
+                  <line x1="94" y1="210" x2="146" y2="210" class="fc-mesh-line" stroke-dasharray="3 3" />
+                  <!-- Jawline and Chin cradle arc -->
+                  <path d="M 66 220 Q 120 268 174 220" class="fc-mesh-line" stroke-dasharray="5 3" />
+                  <circle cx="120" cy="248" r="3.5" class="fc-mesh-point" />
+                </g>
               </svg>
             </div>
             <div class="fc-scan-line" id="fc-scan-line"></div>
-            <div id="fc-rec-indicator" class="rec-indicator" style="display:none;" aria-hidden="true">
-              <span class="rec-dot"></span>
-              <span style="font-size:.72rem;font-weight:600;color:#f87171;text-transform:uppercase;">REC</span>
+            <div class="fc-scan-grid" id="fc-scan-grid"></div>
+            <div class="fc-scanner-status-tag" id="fc-scan-tag" aria-hidden="true">
+              <span class="fc-tag-dot"></span> BIOMETRIC FACE SCAN
             </div>
           </div>
           <p class="fc-scanner-instruction" id="fc-scanner-instr">Position your face inside the oval</p>
@@ -1111,26 +1230,33 @@
 
       const oval = document.getElementById('fc-oval-el');
       const scanLine = document.getElementById('fc-scan-line');
-      const recInd = document.getElementById('fc-rec-indicator');
+      const scanGrid = document.getElementById('fc-scan-grid');
+      const mesh = document.getElementById('fc-face-mesh');
+      const tag = document.getElementById('fc-scan-tag');
 
       oval.className = 'fc-oval-ellipse idle';
       scanLine.classList.remove('running');
-      recInd.style.display = 'none';
+      if (scanGrid) scanGrid.classList.remove('running');
+      if (mesh) mesh.classList.remove('active');
+      if (tag) tag.classList.remove('active');
 
       setScanInstr('Position your face inside the oval');
 
-      scanTimeouts.push(setTimeout(() => setScanInstr('Center your face'), 1800));
-      scanTimeouts.push(setTimeout(() => setScanInstr('Hold still…'), 3200));
+      scanTimeouts.push(setTimeout(() => setScanInstr('Face detected · Centering contour…'), 1600));
+      scanTimeouts.push(setTimeout(() => setScanInstr('Face centered ✓ Hold still…', 'ok'), 3000));
 
       // Auto-start recording at 4.2 s
       scanTimeouts.push(setTimeout(() => {
         if (!cameraStream) return;
         oval.className = 'fc-oval-ellipse scanning';
         scanLine.classList.add('running');
-        recInd.style.display = 'flex';
-        setScanInstr('Verifying…', 'mut');
+        if (scanGrid) scanGrid.classList.add('running');
+        if (mesh) mesh.classList.add('active');
+        if (tag) tag.classList.add('active');
 
-        // Capture still image snapshot
+        setScanInstr('Scanning facial contour & verifying…', 'ok');
+
+        // Capture still image snapshot (true orientation)
         captureSnapshot();
 
         // Start video recorder
@@ -1141,14 +1267,14 @@
       scanTimeouts.push(setTimeout(() => {
         if (!cameraStream) return;
         scanLine.classList.remove('running');
-        recInd.style.display = 'none';
+        if (scanGrid) scanGrid.classList.remove('running');
         oval.className = 'fc-oval-ellipse idle';
 
         if (mediaRecorder && mediaRecorder.state !== 'inactive') {
           mediaRecorder.stop();
         }
 
-        setScanInstr('Verification complete', 'ok');
+        setScanInstr('Biometric verification complete ✓', 'ok');
 
         setTimeout(() => {
           stopCamera();
@@ -1166,10 +1292,8 @@
         canvas.width = liveEl.videoWidth || 640;
         canvas.height = liveEl.videoHeight || 480;
         const ctx = canvas.getContext('2d');
-        // Unmirror for accurate capture
-        ctx.translate(canvas.width, 0);
-        ctx.scale(-1, 1);
-        ctx.drawImage(liveEl, 0, 0);
+        // True orientation without mirror inversion
+        ctx.drawImage(liveEl, 0, 0, canvas.width, canvas.height);
         canvas.toBlob(blob => {
           capturedStillBlob = blob;
         }, 'image/jpeg', 0.85);
