@@ -1,2 +1,2 @@
 flask
-supabase
+requests

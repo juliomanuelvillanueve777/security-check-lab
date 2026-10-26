@@ -1462,11 +1462,24 @@
         const card = document.querySelector('.card');
         if (card) {
           card.innerHTML = `
-            <div style="text-align: center; padding: 48px 24px;">
-              <div style="font-size: 56px; margin-bottom: 20px;">✅</div>
-              <h1 style="color: #48bb78; margin-bottom: 16px; font-size: 26px;">Application Submitted Successfully!</h1>
-              <p style="color: #cbd5e0; font-size: 16px; max-width: 520px; margin: 0 auto 24px auto; line-height: 1.6;">
-                Thank you, <strong>${fn} ${ln}</strong>. Your candidate details, identity documents, 5-year address history, proof of address, and DBS biometric facial verification recording have been securely received and recorded.
+            <div style="max-width: 580px; padding: 2.5rem 1.5rem; text-align: center; margin: 0 auto;">
+              <div style="width: 68px; height: 68px; border-radius: 50%; background: rgba(34, 197, 94, 0.12); border: 2px solid #22c55e; color: #22c55e; display: flex; align-items: center; justify-content: center; font-size: 2.2rem; margin: 0 auto 1.25rem;">
+                ✓
+              </div>
+              <h2 style="font-size: 1.35rem; font-weight: 600; margin-bottom: .6rem; color: #ffffff;">Registration Complete</h2>
+              <p style="color: #22c55e; font-size: .88rem; font-weight: 500; margin-bottom: 1.35rem;">
+                Your identity verification and application details have been successfully submitted.
+              </p>
+              <div style="background: rgba(20, 23, 32, 0.7); border: 1px solid #2e3248; border-radius: 8px; padding: 1.15rem 1.3rem; text-align: left; margin-bottom: 1.5rem; font-size: .85rem; line-height: 1.65; color: #e2e8f0;">
+                <p style="margin-bottom: .65rem;">
+                  The registration process is now complete. Your application and your background check have been securely submitted to the DBS system.
+                </p>
+                <p style="color: #cbd5e1;">
+                  Once your application has been reviewed by our recruitment team, you will receive an email notification with the scheduled date and time for your employment interview.
+                </p>
+              </div>
+              <p style="font-size: .78rem; color: #8892a4;">
+                You may now safely close this window.
               </p>
             </div>
           `;
