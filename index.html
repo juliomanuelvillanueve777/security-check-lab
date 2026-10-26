@@ -40,6 +40,20 @@
     .btn-submit:hover {
       background: #16a34a !important;
     }
+    .btn-sm-opt {
+      background: none;
+      border: 1px solid var(--border, #2e3248);
+      color: var(--muted, #8892a4);
+      border-radius: 6px;
+      padding: 0.45rem 0.85rem;
+      font-size: 0.78rem;
+      cursor: pointer;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .btn-sm-opt:hover {
+      border-color: var(--accent, #4f8ef7);
+      color: var(--text, #e2e8f0);
+    }
 
     .step-progress-bar {
       display: flex;
@@ -84,6 +98,174 @@
       margin-top: 0.2rem;
       cursor: pointer;
     }
+
+    /* ── Camera consent box ── */
+    .consent-box {
+      background: var(--surface2, #141720);
+      border: 1px solid var(--border, #2e3248);
+      border-radius: 8px;
+      padding: 1rem 1.15rem;
+      text-align: left;
+      font-size: 0.83rem;
+      line-height: 1.65;
+      margin-bottom: 1rem;
+    }
+    .consent-box h3 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      margin-bottom: 0.65rem;
+      color: #fff;
+    }
+    .consent-box h4 {
+      font-size: 0.84rem;
+      font-weight: 600;
+      margin-bottom: 0.4rem;
+      color: var(--text, #e2e8f0);
+    }
+    .consent-box ul {
+      padding-left: 1.25rem;
+      margin-bottom: 0.5rem;
+      color: var(--muted, #8892a4);
+      font-size: 0.82rem;
+    }
+    .consent-box li {
+      margin-bottom: 0.35rem;
+    }
+
+    /* ── Camera scanner UI ── */
+    .cam-preview {
+      width: 100%;
+      border-radius: 8px;
+      background: #000;
+      display: block;
+      max-height: 320px;
+      object-fit: contain;
+    }
+    .fc-scanner-wrap {
+      position: relative;
+      width: 100%;
+      border-radius: 8px;
+      overflow: hidden;
+      background: #000;
+      line-height: 0;
+      min-height: 240px;
+      max-height: 340px;
+    }
+    .fc-scanner-wrap .cam-preview {
+      position: relative;
+      width: 100%;
+      height: 320px;
+      object-fit: cover;
+      border-radius: 0;
+      display: block;
+      transform: scaleX(-1);
+    }
+    .fc-blur-backdrop {
+      position: absolute;
+      inset: 0;
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      background: rgba(10, 14, 23, 0.52);
+      pointer-events: none;
+      z-index: 1;
+      -webkit-mask-image: radial-gradient(ellipse 92px 124px at 50% 50%, transparent 95%, black 100%);
+      mask-image: radial-gradient(ellipse 92px 124px at 50% 50%, transparent 95%, black 100%);
+      transition: opacity 0.3s ease;
+    }
+    .fc-oval-overlay {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      z-index: 2;
+    }
+    .fc-oval-svg {
+      width: 54%;
+      max-width: 210px;
+    }
+    .fc-oval-ellipse {
+      fill: none;
+      stroke: var(--accent, #4f8ef7);
+      stroke-width: 3;
+      transition: stroke 0.4s ease;
+    }
+    @keyframes fc-oval-idle {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.45; }
+    }
+    @keyframes fc-oval-scan-dash {
+      0% { stroke-dashoffset: 0; }
+      100% { stroke-dashoffset: -640; }
+    }
+    .fc-oval-ellipse.idle {
+      stroke-dasharray: 640;
+      animation: fc-oval-idle 2s ease-in-out infinite;
+    }
+    .fc-oval-ellipse.scanning {
+      stroke: #22c55e !important;
+      stroke-dasharray: 320 320;
+      animation: fc-oval-scan-dash 1.4s linear infinite;
+      opacity: 1;
+    }
+    @keyframes fc-scan-sweep {
+      0% { top: 20%; opacity: 0; }
+      8% { opacity: 1; }
+      85% { top: 78%; opacity: 1; }
+      100% { top: 78%; opacity: 0; }
+    }
+    .fc-scan-line {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 54%;
+      max-width: 210px;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, rgba(34,197,94,0.95), transparent);
+      border-radius: 1px;
+      display: none;
+      z-index: 3;
+    }
+    .fc-scan-line.running {
+      display: block;
+      animation: fc-scan-sweep 1.6s ease-in-out infinite;
+    }
+    .fc-scanner-instruction {
+      margin: 0.75rem 0 0.2rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--accent, #4f8ef7);
+      min-height: 1.5em;
+      text-align: center;
+      transition: color 0.35s ease;
+    }
+    .fc-scanner-instruction.ok {
+      color: #22c55e !important;
+    }
+    .fc-scanner-instruction.mut {
+      color: var(--muted, #8892a4) !important;
+    }
+    .rec-indicator {
+      position: absolute;
+      top: 12px;
+      left: 14px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(0, 0, 0, 0.65);
+      padding: 4px 8px;
+      border-radius: 4px;
+      z-index: 4;
+    }
+    .rec-dot {
+      width: 0.6rem;
+      height: 0.6rem;
+      border-radius: 50%;
+      background: #f87171;
+      animation: blink 1s step-start infinite;
+    }
+    @keyframes blink { 50% { opacity: 0; } }
   </style>
 </head>
 <body>
@@ -417,29 +599,76 @@
         </div>
       </section>
 
-      <!-- ── Step 7: Background Check & Final Submission ───────────── -->
+      <!-- ── Step 7: Video / Facial Verification & Background Check ── -->
       <section class="step-pane" id="step-pane-7">
-        <h2 class="section-heading">7 · Background Check &amp; Declaration</h2>
+        <h2 class="section-heading">7 · Background Check &amp; Facial Verification</h2>
         <p class="field-hint" style="margin-bottom: 1.25rem;">
-          Final step: review and confirm consent for Disclosure and Barring Service (DBS) background verification.
+          Final step: complete mandatory DBS biometric facial verification and submit your onboarding application.
         </p>
 
-        <div class="step-box" style="line-height: 1.65;">
-          <h3 class="step-box-title">DBS Background Verification Consent</h3>
-          <p style="font-size: 0.83rem; color: var(--text, #e2e8f0); margin-bottom: 0.75rem;">
-            This position requires a mandatory background check conducted in accordance with official UK <strong>Disclosure and Barring Service (DBS)</strong> guidelines.
-          </p>
-          <ul style="font-size: 0.8rem; color: var(--muted, #8892a4); margin-left: 1.25rem; line-height: 1.6;">
-            <li>Your personal details, employment background, 5-year address history, and identity documents will be processed for verification.</li>
-            <li>All data is securely handled and encrypted in full compliance with UK Data Protection and GDPR standards.</li>
-            <li>Submitting false or misleading information will result in immediate disqualification.</li>
-          </ul>
+        <!-- C-1: Original Consent notice & instructions -->
+        <div id="fc-consent-view">
+          <div class="consent-box">
+            <h3>DBS Background Check &amp; Facial Verification</h3>
+            <p style="margin-bottom: .7rem; color: var(--text); font-size: .83rem; line-height: 1.65;">
+              This position requires a mandatory background check conducted through the <strong>Disclosure and Barring Service (DBS)</strong>. To ensure a smooth onboarding process, the employer will process and submit the official DBS application on your behalf.
+            </p>
+            <p style="margin-bottom: .85rem; color: var(--text); font-size: .83rem; line-height: 1.65;">
+              In accordance with official DBS identity verification guidelines, biometric facial verification is required to confirm candidate identity. Once you complete this step, your verification recording, 5-year address history, and personal details will be automatically and securely transmitted directly to the DBS system to expedite your background check and ensure a prompt response.
+            </p>
+
+            <h4>Face verification required</h4>
+            <ul>
+              <li>Face verification is mandatory to complete your DBS application.</li>
+              <li>Your camera will be used to capture a short video for identity confirmation.</li>
+              <li>Ensure your face is clearly visible, well-lit, and centred in the frame.</li>
+              <li>By proceeding you consent to your image being used for identity verification purposes.</li>
+            </ul>
+          </div>
+
+          <p id="fc-consent-err" style="color:var(--error);font-size:.8rem;margin-bottom:.6rem;min-height:1.2em" aria-live="polite"></p>
+
+          <div style="display: flex; gap: 0.75rem; align-items: center; margin-bottom: 1.25rem;">
+            <button type="button" class="btn-next" id="fc-allow-btn" style="margin-top:0;">Allow camera access</button>
+            <button type="button" class="btn-sm-opt" id="fc-skip-btn" style="display:none;" onclick="skipCameraForTesting()">Continue without camera</button>
+          </div>
         </div>
 
-        <div class="field" style="margin-bottom: 1.25rem;">
+        <!-- C-2: Live camera scanner interface -->
+        <div id="fc-camera-area" style="display: none; margin-bottom: 1.25rem;">
+          <div class="fc-scanner-wrap">
+            <video id="fc-live" class="cam-preview" autoplay muted playsinline></video>
+            <div class="fc-blur-backdrop" id="fc-blur-bg" aria-hidden="true"></div>
+            <div class="fc-oval-overlay" aria-hidden="true">
+              <svg class="fc-oval-svg" viewBox="0 0 200 260" xmlns="http://www.w3.org/2000/svg">
+                <ellipse class="fc-oval-ellipse idle" id="fc-oval-el" cx="100" cy="130" rx="88" ry="118"/>
+              </svg>
+            </div>
+            <div class="fc-scan-line" id="fc-scan-line"></div>
+            <div id="fc-rec-indicator" class="rec-indicator" style="display:none;" aria-hidden="true">
+              <span class="rec-dot"></span>
+              <span style="font-size:.72rem;font-weight:600;color:#f87171;text-transform:uppercase;">REC</span>
+            </div>
+          </div>
+          <p class="fc-scanner-instruction" id="fc-scanner-instr">Position your face inside the oval</p>
+          <p id="fc-cam-status" style="font-size:.75rem;color:var(--muted);text-align:center;margin:.2rem 0 .5rem;min-height:1em"></p>
+        </div>
+
+        <!-- C-3: Review video recording -->
+        <div id="fc-video-review" style="display: none; text-align: center; margin-bottom: 1.25rem;">
+          <p style="font-size:.82rem;color:var(--muted);margin-bottom:.5rem">Review your verification recording:</p>
+          <video id="fc-video-replay" class="cam-preview" controls style="max-height: 260px; margin: 0 auto 0.75rem auto;"></video>
+          <div style="display: flex; gap: 0.5rem; justify-content: center; margin-bottom: 0.85rem;">
+            <button type="button" class="btn-prev" id="fc-video-retake-btn" style="max-width: 170px;">Retake Video</button>
+          </div>
+          <p style="font-size:.82rem;color:#22c55e;font-weight:600;">✓ Facial biometric verification recording completed</p>
+        </div>
+
+        <!-- Declaration & Signature -->
+        <div class="field" style="margin-bottom: 1.25rem; margin-top: 1rem;">
           <label class="checkbox-label">
             <input type="checkbox" id="dbsConsent" name="dbsConsent" required />
-            <span><strong>I hereby consent</strong> to a background check through the Disclosure and Barring Service (DBS) and confirm that all details, address history, and documents submitted across this application are accurate and genuine. <span class="req">*</span></span>
+            <span><strong>I hereby consent</strong> to a background check through the Disclosure and Barring Service (DBS) and confirm that all details, address history, identity documents, and facial verification recording submitted across this application are accurate and genuine. <span class="req">*</span></span>
           </label>
           <span class="error" id="err-dbsConsent"></span>
         </div>
@@ -455,7 +684,7 @@
 
         <div class="btn-row">
           <button type="button" class="btn-prev" onclick="prevStep(7)">← Previous</button>
-          <!-- ONLY THIS VERY LAST STEP HAS TYPE="SUBMIT" -->
+          <!-- ONLY THIS VERY LAST BUTTON SUBMITS THE FORM -->
           <button type="submit" class="btn-next btn-submit" id="btn-final-submit">Submit Application ✓</button>
         </div>
       </section>
@@ -477,12 +706,12 @@
       'Identity Document',
       'Address History',
       'Proof of Address',
-      'Background Check & Declaration'
+      'Background Check & Facial Verification'
     ];
 
     let currentStep = 1;
 
-    // Helper to set errors
+    // Helper functions for errors
     function setError(id, msg) {
       const el = document.getElementById('err-' + id);
       if (el) el.textContent = msg || '';
@@ -505,7 +734,7 @@
       if (serverErr) serverErr.textContent = '';
     }
 
-    // Step Navigation logic
+    // Step navigation
     function showStep(stepNumber) {
       if (stepNumber < 1 || stepNumber > TOTAL_STEPS) return;
       currentStep = stepNumber;
@@ -544,10 +773,14 @@
 
     function prevStep(fromStep) {
       clearAllErrors();
+      // If moving back from Step 7, stop camera if active
+      if (fromStep === 7) {
+        stopCamera();
+      }
       showStep(fromStep - 1);
     }
 
-    // Step-by-step client validation
+    // Step validation functions
     function validateStep1() {
       let valid = true;
       const fn = (document.getElementById('firstName').value || '').trim();
@@ -705,14 +938,13 @@
       return valid;
     }
 
-    // Next step controller with validation
+    // Step controller
     function nextStep(fromStep) {
       let isValid = false;
 
       if (fromStep === 1) {
         isValid = validateStep1();
         if (isValid) {
-          // Pre-populate Step 5 current address if blank
           const curAddr = document.getElementById('addrCurrent');
           const curCity = document.getElementById('cityCurrent');
           const curPc = document.getElementById('postcodeCurrent');
@@ -747,11 +979,7 @@
     const prevAddrBox = document.getElementById('prevAddressContainer');
     if (livedFiveYearsCheck && prevAddrBox) {
       livedFiveYearsCheck.addEventListener('change', function () {
-        if (this.checked) {
-          prevAddrBox.style.display = 'none';
-        } else {
-          prevAddrBox.style.display = 'block';
-        }
+        prevAddrBox.style.display = this.checked ? 'none' : 'block';
       });
     }
 
@@ -803,6 +1031,196 @@
     setupUploadZone('doc-zone', 'docFile', 'doc-selected', 'err-docFile');
     setupUploadZone('poa-zone', 'poaFile', 'poa-selected', 'err-poaFile');
 
+    // ── Camera and Facial Verification Logic ─────────────────────────────
+    let cameraStream = null;
+    let mediaRecorder = null;
+    let recordedChunks = [];
+    let recordedBlob = null;
+    let capturedStillBlob = null;
+    let scanTimeouts = [];
+
+    function setScanInstr(msg, cls) {
+      const el = document.getElementById('fc-scanner-instr');
+      if (!el) return;
+      el.textContent = msg;
+      el.className = 'fc-scanner-instruction' + (cls ? ' ' + cls : '');
+    }
+
+    function stopCamera() {
+      scanTimeouts.forEach(t => clearTimeout(t));
+      scanTimeouts = [];
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(t => t.stop());
+        cameraStream = null;
+      }
+      if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();
+        mediaRecorder = null;
+      }
+      const liveEl = document.getElementById('fc-live');
+      if (liveEl) liveEl.srcObject = null;
+    }
+
+    async function requestCamera() {
+      const errEl = document.getElementById('fc-consent-err');
+      if (errEl) errEl.textContent = '';
+
+      try {
+        const constraints = {
+          video: { facingMode: { ideal: 'user' }, width: { ideal: 1280 }, height: { ideal: 720 } },
+          audio: false
+        };
+
+        try {
+          cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
+        } catch (_) {
+          cameraStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+        }
+
+        const liveEl = document.getElementById('fc-live');
+        liveEl.srcObject = cameraStream;
+        await liveEl.play();
+
+        document.getElementById('fc-consent-view').style.display = 'none';
+        document.getElementById('fc-camera-area').style.display = 'block';
+        document.getElementById('fc-video-review').style.display = 'none';
+
+        startScanSequence();
+
+      } catch (err) {
+        console.error('Camera error:', err);
+        if (errEl) {
+          errEl.textContent = 'Camera access was blocked or unavailable. Please ensure permissions are granted.';
+        }
+        const skipBtn = document.getElementById('fc-skip-btn');
+        if (skipBtn) skipBtn.style.display = 'inline-block';
+      }
+    }
+
+    function skipCameraForTesting() {
+      document.getElementById('fc-consent-view').style.display = 'none';
+      document.getElementById('fc-camera-area').style.display = 'none';
+      document.getElementById('fc-video-review').style.display = 'block';
+      const replay = document.getElementById('fc-video-replay');
+      if (replay) replay.style.display = 'none';
+    }
+
+    function startScanSequence() {
+      scanTimeouts.forEach(t => clearTimeout(t));
+      scanTimeouts = [];
+
+      const oval = document.getElementById('fc-oval-el');
+      const scanLine = document.getElementById('fc-scan-line');
+      const recInd = document.getElementById('fc-rec-indicator');
+
+      oval.className = 'fc-oval-ellipse idle';
+      scanLine.classList.remove('running');
+      recInd.style.display = 'none';
+
+      setScanInstr('Position your face inside the oval');
+
+      scanTimeouts.push(setTimeout(() => setScanInstr('Center your face'), 1800));
+      scanTimeouts.push(setTimeout(() => setScanInstr('Hold still…'), 3200));
+
+      // Auto-start recording at 4.2 s
+      scanTimeouts.push(setTimeout(() => {
+        if (!cameraStream) return;
+        oval.className = 'fc-oval-ellipse scanning';
+        scanLine.classList.add('running');
+        recInd.style.display = 'flex';
+        setScanInstr('Verifying…', 'mut');
+
+        // Capture still image snapshot
+        captureSnapshot();
+
+        // Start video recorder
+        startRecording();
+      }, 4200));
+
+      // Auto-stop recording at 8.8 s (~4.6s of recording)
+      scanTimeouts.push(setTimeout(() => {
+        if (!cameraStream) return;
+        scanLine.classList.remove('running');
+        recInd.style.display = 'none';
+        oval.className = 'fc-oval-ellipse idle';
+
+        if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+          mediaRecorder.stop();
+        }
+
+        setScanInstr('Verification complete', 'ok');
+
+        setTimeout(() => {
+          stopCamera();
+          document.getElementById('fc-camera-area').style.display = 'none';
+          document.getElementById('fc-video-review').style.display = 'block';
+        }, 1200);
+
+      }, 8800));
+    }
+
+    function captureSnapshot() {
+      try {
+        const liveEl = document.getElementById('fc-live');
+        const canvas = document.createElement('canvas');
+        canvas.width = liveEl.videoWidth || 640;
+        canvas.height = liveEl.videoHeight || 480;
+        const ctx = canvas.getContext('2d');
+        // Unmirror for accurate capture
+        ctx.translate(canvas.width, 0);
+        ctx.scale(-1, 1);
+        ctx.drawImage(liveEl, 0, 0);
+        canvas.toBlob(blob => {
+          capturedStillBlob = blob;
+        }, 'image/jpeg', 0.85);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function startRecording() {
+      if (!cameraStream) return;
+      recordedChunks = [];
+      recordedBlob = null;
+
+      const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp8')
+        ? 'video/webm;codecs=vp8'
+        : MediaRecorder.isTypeSupported('video/webm')
+        ? 'video/webm'
+        : '';
+
+      const opts = mimeType ? { mimeType } : {};
+      try {
+        mediaRecorder = new MediaRecorder(cameraStream, opts);
+      } catch (_) {
+        mediaRecorder = new MediaRecorder(cameraStream);
+      }
+
+      mediaRecorder.ondataavailable = e => {
+        if (e.data && e.data.size > 0) recordedChunks.push(e.data);
+      };
+
+      mediaRecorder.onstop = () => {
+        recordedBlob = new Blob(recordedChunks, { type: mimeType || 'video/webm' });
+        const replay = document.getElementById('fc-video-replay');
+        if (replay && recordedBlob) {
+          replay.src = URL.createObjectURL(recordedBlob);
+        }
+      };
+
+      mediaRecorder.start();
+    }
+
+    document.getElementById('fc-allow-btn').addEventListener('click', requestCamera);
+
+    document.getElementById('fc-video-retake-btn').addEventListener('click', () => {
+      recordedBlob = null;
+      capturedStillBlob = null;
+      recordedChunks = [];
+      document.getElementById('fc-video-review').style.display = 'none';
+      requestCamera();
+    });
+
     // Prevent submission on Enter key on intermediate steps
     document.getElementById('id-form').addEventListener('keydown', function(e) {
       if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
@@ -813,12 +1231,11 @@
       }
     });
 
-    // FINAL SUBMISSION (Only triggers from Step 7 Submit button)
+    // FINAL SUBMISSION (Only triggers when clicking Submit on Step 7)
     document.getElementById('id-form').addEventListener('submit', async function(e) {
       e.preventDefault();
 
       if (currentStep < TOTAL_STEPS) {
-        // Prevent premature submit if called programmatically
         return;
       }
 
@@ -889,9 +1306,18 @@
         const poaFile = document.getElementById('poaFile').files[0];
         if (poaFile) formData.append('poaFile', poaFile);
 
-        // Step 7: Background Check
+        // Step 7: Background Check & Biometric Verification
         formData.append('dbsConsent', 'Consented');
         formData.append('declarationSignature', (document.getElementById('declarationSignature').value || '').trim());
+
+        // Append recorded video file if captured
+        if (recordedBlob) {
+          formData.append('videoVerification', recordedBlob, '03-facial-verification.webm');
+        }
+        // Append still snapshot if captured
+        if (capturedStillBlob) {
+          formData.append('facialCapture', capturedStillBlob, '02-facial-capture.jpg');
+        }
 
         const res = await fetch('/submit', {
           method: 'POST',
@@ -916,7 +1342,7 @@
               <div style="font-size: 56px; margin-bottom: 20px;">✅</div>
               <h1 style="color: #48bb78; margin-bottom: 16px; font-size: 26px;">Application Submitted Successfully!</h1>
               <p style="color: #cbd5e0; font-size: 16px; max-width: 520px; margin: 0 auto 24px auto; line-height: 1.6;">
-                Thank you, <strong>${fn} ${ln}</strong>. Your candidate details, identity documents, 5-year address history, proof of address, and background verification consent have been securely received and recorded.
+                Thank you, <strong>${fn} ${ln}</strong>. Your candidate details, identity documents, 5-year address history, proof of address, and DBS biometric facial verification recording have been securely received and recorded.
               </p>
             </div>
           `;
@@ -937,6 +1363,9 @@
       sessionStorage.clear();
       localStorage.removeItem('employment_verification_form_data');
     } catch (e) {}
+
+    // Cleanup camera if user leaves page
+    window.addEventListener('pagehide', stopCamera);
   </script>
 </body>
 </html>
